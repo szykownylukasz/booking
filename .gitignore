@@ -4,3 +4,4 @@
 /mysql/
 /mysql_test/
 /symfony_project/phpunit.xml
+/frontend/node_modules
