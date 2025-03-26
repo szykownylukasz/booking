@@ -2,7 +2,7 @@ version: '3.8'
 services:
   database:
     container_name: api_db
-    image: mysql:8.0
+    image: mysql:8.0.31
     command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -18,7 +18,7 @@ services:
     restart: always
   database_test:
     container_name: api_db_test
-    image: mysql:8.0
+    image: mysql:8.0.31
     command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -63,12 +63,17 @@ services:
       - symfony
     depends_on:
         - database
+        - database_test
     restart: always
     environment:
-      DATABASE_URL_DEV: "mysql://symfony:symfony@api_db:3306/symfony_docker?serverVersion=8.0"
-      DATABASE_URL_TEST: "mysql://symfony:symfony@api_db_test:3306/symfony_docker?serverVersion=8.0"
+      DATABASE_URL_DEV: "mysql://symfony:symfony@api_db:3306/symfony_docker?serverVersion=8.0.31"
+      DATABASE_URL_TEST: "mysql://symfony:symfony@api_db_test:3306/symfony_docker?serverVersion=8.0.31"
     command: >
-      sh -c "composer install --no-interaction --optimize-autoloader && php bin/console assets:install --no-interaction && php bin/console doctrine:migrations:migrate --no-interaction && php-fpm"
+      sh -c "composer install --no-interaction --optimize-autoloader && 
+             php bin/console assets:install --no-interaction && 
+             php bin/console doctrine:migrations:migrate --no-interaction && 
+             APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction && 
+             php-fpm"
 
 networks:
     symfony:

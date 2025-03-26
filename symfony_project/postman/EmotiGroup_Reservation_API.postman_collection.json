@@ -1,0 +1,212 @@
+{
+	"info": {
+		"_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
+		"name": "EmotiGroup Reservation API",
+		"description": "API do zarządzania rezerwacjami",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Lista rezerwacji",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/reservations",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "reservations"]
+				},
+				"description": "Pobiera listę wszystkich rezerwacji"
+			},
+			"response": [
+				{
+					"name": "Sukces",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/reservations"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"status": "success",
+						"data": [
+							{
+								"id": 1,
+								"startDate": "2025-04-01",
+								"endDate": "2025-04-03",
+								"totalPrice": 300,
+								"status": "active",
+								"createdAt": "2025-03-26 20:00:00",
+								"updatedAt": "2025-03-26 20:00:00"
+							}
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Utwórz rezerwację",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"startDate\": \"2025-04-01\",\n    \"endDate\": \"2025-04-03\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/reservations",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "reservations"]
+				},
+				"description": "Tworzy nową rezerwację"
+			},
+			"response": [
+				{
+					"name": "Sukces",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"startDate\": \"2025-04-01\",\n    \"endDate\": \"2025-04-03\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/reservations"
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"status": "success",
+						"data": {
+							"id": 1,
+							"startDate": "2025-04-01",
+							"endDate": "2025-04-03",
+							"totalPrice": 300,
+							"status": "active",
+							"createdAt": "2025-03-26 20:00:00",
+							"updatedAt": "2025-03-26 20:00:00"
+						}
+					}
+				},
+				{
+					"name": "Błąd walidacji",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"startDate\": \"2025-04-03\",\n    \"endDate\": \"2025-04-01\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/reservations"
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"status": "error",
+						"message": "End date must be after or equal to start date"
+					}
+				}
+			]
+		},
+		{
+			"name": "Anuluj rezerwację",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/reservations/1/cancel",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "reservations", "1", "cancel"]
+				},
+				"description": "Anuluje istniejącą rezerwację"
+			},
+			"response": [
+				{
+					"name": "Sukces",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/reservations/1/cancel"
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"status": "success",
+						"message": "Reservation cancelled successfully"
+					}
+				},
+				{
+					"name": "Nie znaleziono",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/reservations/999/cancel"
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"status": "error",
+						"message": "Reservation not found"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:81",
+			"type": "string"
+		}
+	]
+}
