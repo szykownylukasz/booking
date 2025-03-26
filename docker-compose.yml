@@ -1,0 +1,63 @@
+version: '3.8'
+services:
+  database:
+    container_name: api_db
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: symfony_docker
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+    ports:
+      - '4306:3306'
+    volumes:
+      - ./mysql:/var/lib/mysql
+    networks:
+      - symfony
+    restart: always
+  database_test:
+    container_name: api_db_test
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: symfony_docker_test
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+    ports:
+      - '4307:3306'
+    volumes:
+      - ./mysql_test:/var/lib/mysql
+    networks:
+      - symfony
+    restart: always
+  nginx:
+    build:
+        context: .
+        dockerfile: Dockerfile-nginx
+    ports:
+      - "81:80"
+    volumes:
+      - ./symfony_project:/var/www/symfony/
+    networks:
+      - symfony
+    restart: always
+  php:
+    build:
+        dockerfile: Dockerfile-php
+    volumes:
+      - ./symfony_project:/var/www/symfony/
+    networks:
+      - symfony
+    depends_on:
+        - database
+    restart: always
+    environment:
+      DATABASE_URL_DEV: "mysql://symfony:symfony@api_db:3306/symfony_docker?serverVersion=8.0"
+      DATABASE_URL_TEST: "mysql://symfony:symfony@api_db_test:3306/symfony_docker?serverVersion=8.0"
+    command: >
+      sh -c "composer install --no-interaction --optimize-autoloader && php bin/console assets:install --no-interaction && php bin/console doctrine:migrations:migrate --no-interaction && php-fpm"
+
+networks:
+    symfony:

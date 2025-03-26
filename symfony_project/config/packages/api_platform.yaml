@@ -1,0 +1,24 @@
+api_platform:
+    title: Hello API Platform
+    version: 1.0.0
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
+        html: ['text/html']
+    patch_formats:
+        json: ['application/merge-patch+json']
+    swagger:
+        versions: [3]
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+        formats:
+            json:     ['application/json']
+            jsonld:   ['application/ld+json']
+        input_formats:
+            json:     ['application/json']
+            jsonld:   ['application/ld+json']
+        output_formats:
+            json:     ['application/json']
+            jsonld:   ['application/ld+json']

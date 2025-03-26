@@ -1,0 +1,9 @@
+monolog:
+    channels: ['product_notifications']
+    handlers:
+        product_notifications:
+            type: rotating_file
+            path: '%kernel.logs_dir%/product_notifications.log'
+            level: info
+            channels: ['product_notifications']
+            max_files: 10

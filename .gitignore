@@ -1,0 +1,6 @@
+/symfony_project/public/bundles/
+/var/
+/vendor/
+/mysql/
+/mysql_test/
+/symfony_project/phpunit.xml

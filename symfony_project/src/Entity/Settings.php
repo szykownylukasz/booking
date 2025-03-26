@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Entity;
+
+use App\Repository\SettingsRepository;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity(repositoryClass: SettingsRepository::class)]
+class Settings
+{
+    public const DEFAULT_TOTAL_SPOTS = 'default_total_spots';
+    public const DAILY_PRICE = 'daily_price';
+    public const SPECIAL_DATE_PRICE_PREFIX = 'price_for_date_';
+    public const SPECIAL_TOTAL_SPOTS_PREFIX = 'total_spots_for_date_';
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $key = null;
+
+    #[ORM\Column(type: 'text')]
+    private ?string $value = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $updatedAt;
+
+    public function __construct()
+    {
+        $this->updatedAt = new \DateTime();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getKey(): ?string
+    {
+        return $this->key;
+    }
+
+    public function setKey(string $key): self
+    {
+        $this->key = $key;
+        return $this;
+    }
+
+    public function getValue(): ?string
+    {
+        return $this->value;
+    }
+
+    public function setValue(string $value): self
+    {
+        $this->value = $value;
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function updateTimestamp(): void
+    {
+        $this->updatedAt = new \DateTime();
+    }
+
+    public static function getSpecialPriceKey(\DateTimeInterface $date): string
+    {
+        return self::SPECIAL_DATE_PRICE_PREFIX . $date->format('Y-m-d');
+    }
+
+    public static function getSpecialTotalSpotsKey(\DateTimeInterface $date): string
+    {
+        return self::SPECIAL_TOTAL_SPOTS_PREFIX . $date->format('Y-m-d');
+    }
+}
