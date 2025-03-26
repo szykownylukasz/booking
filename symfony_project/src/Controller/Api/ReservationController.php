@@ -23,17 +23,45 @@ class ReservationController extends AbstractController
     ) {
     }
 
+    #[Route('', methods: ['GET'])]
+    public function list(): JsonResponse
+    {
+        $reservations = $this->reservationService->getAllReservations();
+        
+        return new JsonResponse([
+            'status' => 'success',
+            'data' => array_map(function(Reservation $reservation) {
+                return [
+                    'id' => $reservation->getId(),
+                    'startDate' => $reservation->getStartDate()->format('Y-m-d'),
+                    'endDate' => $reservation->getEndDate()->format('Y-m-d'),
+                    'totalPrice' => $reservation->getTotalPrice(),
+                    'status' => $reservation->getStatus(),
+                    'createdAt' => $reservation->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'updatedAt' => $reservation->getUpdatedAt()->format('Y-m-d H:i:s')
+                ];
+            }, $reservations)
+        ]);
+    }
+
     #[Route('', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         try {
             $data = json_decode($request->getContent(), true);
-            
+            if (!isset($data['startDate']) || !isset($data['endDate'])) {
+                throw new \InvalidArgumentException('Start date and end date are required');
+            }
+
             $startDate = new \DateTime($data['startDate']);
             $endDate = new \DateTime($data['endDate']);
-            
+
+            if ($startDate > $endDate) {
+                throw new \InvalidArgumentException('Start date cannot be later than end date');
+            }
+
             $reservationRequest = new ReservationRequest($startDate, $endDate);
-            
+
             $violations = $this->validator->validate($reservationRequest);
             if (count($violations) > 0) {
                 return new JsonResponse([
@@ -51,57 +79,54 @@ class ReservationController extends AbstractController
                     'startDate' => $reservation->getStartDate()->format('Y-m-d'),
                     'endDate' => $reservation->getEndDate()->format('Y-m-d'),
                     'totalPrice' => $reservation->getTotalPrice(),
-                    'status' => $reservation->getStatus()
+                    'status' => $reservation->getStatus(),
+                    'createdAt' => $reservation->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'updatedAt' => $reservation->getUpdatedAt()->format('Y-m-d H:i:s')
                 ]
             ], Response::HTTP_CREATED);
-
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             return new JsonResponse([
                 'status' => 'error',
                 'message' => $e->getMessage()
             ], Response::HTTP_BAD_REQUEST);
+        } catch (\RuntimeException $e) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'An unexpected error occurred'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    #[Route('', methods: ['GET'])]
-    public function list(): JsonResponse
-    {
-        $reservations = $this->reservationService->getAllReservations();
-        
-        $data = array_map(function(Reservation $reservation) {
-            return [
-                'id' => $reservation->getId(),
-                'startDate' => $reservation->getStartDate()->format('Y-m-d'),
-                'endDate' => $reservation->getEndDate()->format('Y-m-d'),
-                'totalPrice' => $reservation->getTotalPrice(),
-                'status' => $reservation->getStatus(),
-                'createdAt' => $reservation->getCreatedAt()->format('Y-m-d H:i:s'),
-                'updatedAt' => $reservation->getUpdatedAt()->format('Y-m-d H:i:s')
-            ];
-        }, $reservations);
-
-        return new JsonResponse([
-            'status' => 'success',
-            'data' => $data
-        ]);
-    }
-
     #[Route('/{id}/cancel', methods: ['POST'])]
-    public function cancel(Reservation $reservation): JsonResponse
+    public function cancel(int $id): JsonResponse
     {
         try {
+            $reservation = $this->reservationService->getReservation($id);
+            if (!$reservation) {
+                throw new \RuntimeException('Reservation not found');
+            }
+
             $this->reservationService->cancelReservation($reservation);
 
             return new JsonResponse([
                 'status' => 'success',
                 'message' => 'Reservation cancelled successfully'
             ]);
-
-        } catch (\Exception $e) {
+        } catch (\RuntimeException $e) {
             return new JsonResponse([
                 'status' => 'error',
                 'message' => $e->getMessage()
             ], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'An unexpected error occurred'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

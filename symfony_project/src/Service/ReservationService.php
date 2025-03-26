@@ -23,48 +23,67 @@ class ReservationService
 
     public function createReservation(ReservationRequest $request): Reservation
     {
-        // Check availability for the date range
-        if (!$this->isAvailable($request->getStartDate(), $request->getEndDate())) {
-            throw new \RuntimeException('No available spots for the selected dates');
+        $this->entityManager->beginTransaction();
+        try {
+            // Check availability for the date range
+            if (!$this->isAvailable($request->getStartDate(), $request->getEndDate())) {
+                throw new \RuntimeException('No available spots for the selected dates');
+            }
+
+            // Calculate total price
+            $totalPrice = $this->calculateTotalPrice($request->getStartDate(), $request->getEndDate());
+
+            // Create reservation
+            $reservation = new Reservation();
+            $reservation->setStartDate($request->getStartDate())
+                ->setEndDate($request->getEndDate())
+                ->setTotalPrice($totalPrice)
+                ->setStatus('active');
+
+            $this->entityManager->persist($reservation);
+
+            // Update availability for each day
+            $this->updateAvailability($request->getStartDate(), $request->getEndDate(), -1);
+
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+
+            return $reservation;
+        } catch (\Exception $e) {
+            $this->entityManager->rollback();
+            throw $e;
         }
-
-        // Calculate total price
-        $totalPrice = $this->calculateTotalPrice($request->getStartDate(), $request->getEndDate());
-
-        // Create reservation
-        $reservation = new Reservation();
-        $reservation->setStartDate($request->getStartDate())
-            ->setEndDate($request->getEndDate())
-            ->setTotalPrice($totalPrice)
-            ->setStatus('active');
-
-        $this->entityManager->persist($reservation);
-
-        // Update availability for each day
-        $this->updateAvailability($request->getStartDate(), $request->getEndDate(), -1);
-
-        $this->entityManager->flush();
-
-        return $reservation;
     }
 
     public function cancelReservation(Reservation $reservation): void
     {
-        if ($reservation->getStatus() !== 'active') {
-            throw new \RuntimeException('Reservation is not active');
+        $this->entityManager->beginTransaction();
+        try {
+            if ($reservation->getStatus() !== 'active') {
+                throw new \RuntimeException('Reservation is not active');
+            }
+
+            $reservation->setStatus('cancelled');
+            
+            // Restore availability for each day
+            $this->updateAvailability($reservation->getStartDate(), $reservation->getEndDate(), 1);
+
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+        } catch (\Exception $e) {
+            $this->entityManager->rollback();
+            throw $e;
         }
-
-        $reservation->setStatus('cancelled');
-        
-        // Restore availability for each day
-        $this->updateAvailability($reservation->getStartDate(), $reservation->getEndDate(), 1);
-
-        $this->entityManager->flush();
     }
 
     public function getAllReservations(): array
     {
         return $this->reservationRepository->findAll();
+    }
+
+    public function getReservation(int $id): ?Reservation
+    {
+        return $this->reservationRepository->find($id);
     }
 
     private function isAvailable(\DateTimeInterface $startDate, \DateTimeInterface $endDate): bool
@@ -87,7 +106,7 @@ class ReservationService
         $currentDate = clone $startDate;
 
         while ($currentDate <= $endDate) {
-            $specialPriceKey = Settings::getSpecialPriceKey($currentDate);
+            $specialPriceKey = Settings::SPECIAL_DATE_PRICE_PREFIX . $currentDate->format('Y-m-d');
             $specialPrice = $this->settingsRepository->findByKey($specialPriceKey);
             
             if ($specialPrice) {
@@ -111,13 +130,7 @@ class ReservationService
         $currentDate = clone $startDate;
         while ($currentDate <= $endDate) {
             $availability = $this->getOrCreateDailyAvailability($currentDate);
-            
-            if ($change < 0) {
-                $availability->decreaseAvailableSpots(abs($change));
-            } else {
-                $availability->increaseAvailableSpots($change);
-            }
-            
+            $availability->setAvailableSpots($availability->getAvailableSpots() + $change);
             $this->entityManager->persist($availability);
             $currentDate->modify('+1 day');
         }
@@ -125,14 +138,13 @@ class ReservationService
 
     private function getOrCreateDailyAvailability(\DateTimeInterface $date): DailyAvailability
     {
+        $dateFormatted = $date->format('Y-m-d');
+        $date = new \DateTime($dateFormatted); // Normalizacja daty do północy
+
         $availability = $this->dailyAvailabilityRepository->findOneBy(['date' => $date]);
-        
         if (!$availability) {
-            $availability = new DailyAvailability();
-            $availability->setDate($date);
-            
-            // Check for special total spots setting
-            $specialTotalSpotsKey = Settings::getSpecialTotalSpotsKey($date);
+            // Check for special total spots setting for this date
+            $specialTotalSpotsKey = Settings::SPECIAL_TOTAL_SPOTS_PREFIX . $dateFormatted;
             $specialTotalSpots = $this->settingsRepository->findByKey($specialTotalSpotsKey);
             
             if ($specialTotalSpots) {
@@ -144,11 +156,26 @@ class ReservationService
                 }
                 $totalSpots = (int)$defaultTotalSpots->getValue();
             }
+
+            $availability = new DailyAvailability();
+            $availability->setDate($date)
+                ->setTotalSpots($totalSpots)
+                ->setAvailableSpots($totalSpots);
             
-            $availability->setTotalSpots($totalSpots);
-            $availability->setAvailableSpots($totalSpots);
+            $this->entityManager->persist($availability);
+            
+            // Flush i ponowne pobranie, aby uniknąć duplikatów
+            try {
+                $this->entityManager->flush();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                // Jeśli ktoś inny już utworzył rekord, pobierz go
+                $availability = $this->dailyAvailabilityRepository->findOneBy(['date' => $date]);
+                if (!$availability) {
+                    throw $e; // Jeśli nadal nie ma rekordu, coś poszło nie tak
+                }
+            }
         }
-        
+
         return $availability;
     }
 }
