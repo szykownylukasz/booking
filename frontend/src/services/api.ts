@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { ReservationRequest } from '../types/reservation';
 import { authService } from './auth';
-
-const API_URL = 'http://localhost:81/api';
+import { config } from '../config/env';
 
 interface Settings {
     maxReservationsPerDay: number;
@@ -18,7 +17,7 @@ export const api = {
     createReservation: async (data: ReservationRequest): Promise<void> => {
         try {
             console.log('Creating reservation with data:', data);
-            await axios.post(`${API_URL}/reservations`, data, {
+            await axios.post(`${config.API_URL}/reservations`, data, {
                 headers: getAuthHeaders()
             });
         } catch (error: any) {
@@ -29,7 +28,7 @@ export const api = {
 
     getReservations: async (): Promise<any[]> => {
         try {
-            const response = await axios.get(`${API_URL}/reservations`, {
+            const response = await axios.get(`${config.API_URL}/reservations`, {
                 headers: getAuthHeaders()
             });
             console.log('Reservations response:', response.data);
@@ -47,7 +46,7 @@ export const api = {
 
     cancelReservation: async (id: number): Promise<void> => {
         try {
-            await axios.post(`${API_URL}/reservations/${id}/cancel`, {}, {
+            await axios.post(`${config.API_URL}/reservations/${id}/cancel`, {}, {
                 headers: getAuthHeaders()
             });
         } catch (error: any) {
@@ -58,7 +57,7 @@ export const api = {
 
     getSettings: async (): Promise<Settings> => {
         try {
-            const response = await axios.get(`${API_URL}/settings`, {
+            const response = await axios.get(`${config.API_URL}/settings`, {
                 headers: getAuthHeaders()
             });
             console.log('Settings response:', response);
@@ -73,7 +72,7 @@ export const api = {
     updateSettings: async (settings: Settings): Promise<void> => {
         try {
             console.log('Updating settings with:', settings);
-            const response = await axios.put(`${API_URL}/settings`, settings, {
+            const response = await axios.put(`${config.API_URL}/settings`, settings, {
                 headers: getAuthHeaders()
             });
             console.log('Update settings response:', response.data);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Typography } from '@mui/material';
+import { Box, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Typography, CircularProgress } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
 export const AuthHeader: React.FC = () => {
@@ -8,9 +8,11 @@ export const AuthHeader: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = async () => {
         try {
+            setIsLoading(true);
             await login(username, password);
             setOpen(false);
             setError('');
@@ -18,6 +20,8 @@ export const AuthHeader: React.FC = () => {
             setPassword('');
         } catch (err) {
             setError('Invalid credentials');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -53,6 +57,7 @@ export const AuthHeader: React.FC = () => {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             fullWidth
+                            disabled={isLoading}
                         />
                         <TextField
                             label="Password"
@@ -61,6 +66,7 @@ export const AuthHeader: React.FC = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             onKeyPress={handleKeyPress}
                             fullWidth
+                            disabled={isLoading}
                         />
                         {error && (
                             <Typography color="error">
@@ -70,8 +76,13 @@ export const AuthHeader: React.FC = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button onClick={handleLogin} variant="contained">
+                    <Button onClick={() => setOpen(false)} disabled={isLoading}>Cancel</Button>
+                    <Button 
+                        onClick={handleLogin} 
+                        variant="contained" 
+                        disabled={isLoading}
+                        startIcon={isLoading ? <CircularProgress size={20} /> : null}
+                    >
                         Login
                     </Button>
                 </DialogActions>

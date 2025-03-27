@@ -99,23 +99,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               disabled={saving}
             />
           </Box>
-        ) : error ? (
-          <Box sx={{ color: 'error.main', p: 2 }}>
-            {error}
-          </Box>
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>
+        <Button onClick={onClose} disabled={loading || saving}>
           Cancel
         </Button>
         <Button 
           onClick={handleSave} 
           variant="contained" 
-          color="primary"
           disabled={loading || saving || !settings}
+          startIcon={saving ? <CircularProgress size={20} /> : null}
         >
-          {saving ? 'Saving...' : 'Save'}
+          Save
         </Button>
       </DialogActions>
     </Dialog>

@@ -30,7 +30,7 @@ A small programming sample using the Symfony API platform
    
 	http://localhost:81/api/doc
 	
-	When using the API, you use the API, use content-type: application/ld+json or application/json. For response you can set also application/ld+json or application/json.
+	When using the API, you use the API, use application/json.
 
 6. **Test users:**  
   

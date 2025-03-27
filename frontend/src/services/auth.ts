@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { LoginRequest, AuthResponse, User } from '../types/auth';
+import { config } from '../config/env';
 
-const API_URL = 'http://localhost:81/api';
+const API_URL = config.API_URL;
 
 function parseJwt(token: string) {
     try {
