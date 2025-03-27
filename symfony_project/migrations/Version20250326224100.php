@@ -30,12 +30,6 @@ final class Version20250326224100 extends AbstractMigration
         $this->addSql('ALTER TABLE reservation ADD user_id INT NOT NULL');
         $this->addSql('ALTER TABLE reservation ADD CONSTRAINT FK_42C84955A76ED395 FOREIGN KEY (user_id) REFERENCES `user` (id)');
         $this->addSql('CREATE INDEX IDX_42C84955A76ED395 ON reservation (user_id)');
-
-        // Insert default users (passwords will be hashed in DataFixtures)
-        $this->addSql("INSERT INTO `user` (username, roles, password) VALUES 
-            ('admin', '[\"ROLE_ADMIN\"]', '\$2y\$13\$ESVwrL3ZfCMgwmxrGGxQd.ulhxVcUm3J5PP8ZfB2RPHZwkAQJju4e'), -- admin
-            ('user', '[\"ROLE_USER\"]', '\$2y\$13\$vd9PTtZZrNcwsxgYGBa0UOEhYm.3ySwYFEGcluXyZt.AbXGBXoVEi')  -- user
-        ");
     }
 
     public function down(Schema $schema): void

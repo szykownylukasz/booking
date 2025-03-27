@@ -8,8 +8,13 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 
-class CreateUsersCommand extends Command
+#[AsCommand(
+    name: 'app:create-users',
+    description: 'Creates default users for the application',
+)]
+final class CreateUsersCommand extends Command
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -18,14 +23,16 @@ class CreateUsersCommand extends Command
         parent::__construct();
     }
 
-    protected function configure(): void
-    {
-        $this->setName('app:create-users')
-            ->setDescription('Creates default users');
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // Check if there are any existing users
+        $existingUsers = $this->entityManager->getRepository(User::class)->count([]);
+        
+        if ($existingUsers > 0) {
+            $output->writeln('Users already exist in the database. Skipping creation.');
+            return Command::SUCCESS;
+        }
+
         // Create admin user
         $admin = new User();
         $admin->setUsername('admin');

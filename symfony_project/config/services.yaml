@@ -19,5 +19,13 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+            - '../src/Command'
+            - '../src/DTO/'
+
+    # Explicitly configure commands
+    App\Command\:
+        resource: '../src/Command'
+        tags: ['console.command']
+
     App\Notifier\LogNotifier:
         tags: ['app.notifier']
