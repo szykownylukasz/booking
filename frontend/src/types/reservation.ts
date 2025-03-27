@@ -3,9 +3,10 @@ export interface Reservation {
     startDate: string;
     endDate: string;
     totalPrice: number;
-    status: string;
+    status: 'active' | 'cancelled';
     createdAt: string;
     updatedAt: string;
+    username?: string;
 }
 
 export interface ReservationRequest {

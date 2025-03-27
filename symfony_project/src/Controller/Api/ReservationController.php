@@ -3,52 +3,47 @@
 namespace App\Controller\Api;
 
 use App\DTO\ReservationRequest;
-use App\Entity\Reservation;
 use App\Service\ReservationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/api/reservations')]
+#[Route('/api')]
 class ReservationController extends AbstractController
 {
     public function __construct(
-        private ReservationService $reservationService,
-        private SerializerInterface $serializer,
-        private ValidatorInterface $validator
+        private ReservationService $reservationService
     ) {
     }
 
-    #[Route('', methods: ['GET'])]
-    public function list(): JsonResponse
+    #[Route('/reservations', name: 'get_reservations', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function getReservations(): JsonResponse
     {
-        $reservations = $this->reservationService->getAllReservations();
-        
-        return new JsonResponse([
-            'status' => 'success',
-            'data' => array_map(function(Reservation $reservation) {
-                return [
-                    'id' => $reservation->getId(),
-                    'startDate' => $reservation->getStartDate()->format('Y-m-d'),
-                    'endDate' => $reservation->getEndDate()->format('Y-m-d'),
-                    'totalPrice' => $reservation->getTotalPrice(),
-                    'status' => $reservation->getStatus(),
-                    'createdAt' => $reservation->getCreatedAt()->format('Y-m-d H:i:s'),
-                    'updatedAt' => $reservation->getUpdatedAt()->format('Y-m-d H:i:s')
-                ];
-            }, $reservations)
-        ]);
+        try {
+            $reservations = $this->reservationService->getAllReservations($this->getUser());
+            return $this->json([
+                'status' => 'success',
+                'data' => $reservations
+            ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('', methods: ['POST'])]
+    #[Route('/reservations', name: 'create_reservation', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     public function create(Request $request): JsonResponse
     {
         try {
             $data = json_decode($request->getContent(), true);
+            
             if (!isset($data['startDate']) || !isset($data['endDate'])) {
                 throw new \InvalidArgumentException('Start date and end date are required');
             }
@@ -56,77 +51,63 @@ class ReservationController extends AbstractController
             $startDate = new \DateTime($data['startDate']);
             $endDate = new \DateTime($data['endDate']);
 
-            if ($startDate > $endDate) {
-                throw new \InvalidArgumentException('Start date cannot be later than end date');
+            if ($endDate < $startDate) {
+                throw new \InvalidArgumentException('End date must be after or equal to start date');
             }
 
             $reservationRequest = new ReservationRequest($startDate, $endDate);
+            $reservation = $this->reservationService->createReservation($reservationRequest, $this->getUser());
 
-            $violations = $this->validator->validate($reservationRequest);
-            if (count($violations) > 0) {
-                return new JsonResponse([
-                    'status' => 'error',
-                    'message' => (string)$violations
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
-            $reservation = $this->reservationService->createReservation($reservationRequest);
-
-            return new JsonResponse([
+            return $this->json([
                 'status' => 'success',
-                'data' => [
-                    'id' => $reservation->getId(),
-                    'startDate' => $reservation->getStartDate()->format('Y-m-d'),
-                    'endDate' => $reservation->getEndDate()->format('Y-m-d'),
-                    'totalPrice' => $reservation->getTotalPrice(),
-                    'status' => $reservation->getStatus(),
-                    'createdAt' => $reservation->getCreatedAt()->format('Y-m-d H:i:s'),
-                    'updatedAt' => $reservation->getUpdatedAt()->format('Y-m-d H:i:s')
-                ]
-            ], Response::HTTP_CREATED);
-        } catch (\InvalidArgumentException $e) {
-            return new JsonResponse([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], Response::HTTP_BAD_REQUEST);
-        } catch (\RuntimeException $e) {
-            return new JsonResponse([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], Response::HTTP_BAD_REQUEST);
+                'data' => $reservation
+            ], Response::HTTP_CREATED, [], ['groups' => ['reservation:read']]);
         } catch (\Exception $e) {
-            return new JsonResponse([
+            return $this->json([
                 'status' => 'error',
-                'message' => 'An unexpected error occurred'
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+                'message' => $e->getMessage()
+            ], Response::HTTP_BAD_REQUEST);
         }
     }
 
-    #[Route('/{id}/cancel', methods: ['POST'])]
-    public function cancel(int $id): JsonResponse
+    #[Route('/reservations/{id}', name: 'get_reservation', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function getReservation(int $id): JsonResponse
     {
         try {
-            $reservation = $this->reservationService->getReservation($id);
+            $reservation = $this->reservationService->getReservation($id, $this->getUser());
+            
             if (!$reservation) {
                 throw new \RuntimeException('Reservation not found');
             }
 
-            $this->reservationService->cancelReservation($reservation);
-
-            return new JsonResponse([
+            return $this->json([
                 'status' => 'success',
-                'message' => 'Reservation cancelled successfully'
-            ]);
-        } catch (\RuntimeException $e) {
-            return new JsonResponse([
+                'data' => $reservation
+            ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
+        } catch (\Exception $e) {
+            return $this->json([
                 'status' => 'error',
                 'message' => $e->getMessage()
             ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    #[Route('/reservations/{id}/cancel', name: 'cancel_reservation', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function cancel(int $id): JsonResponse
+    {
+        try {
+            $this->reservationService->cancelReservation($id, $this->getUser());
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Reservation cancelled successfully'
+            ]);
         } catch (\Exception $e) {
-            return new JsonResponse([
+            return $this->json([
                 'status' => 'error',
-                'message' => 'An unexpected error occurred'
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+                'message' => $e->getMessage()
+            ], Response::HTTP_BAD_REQUEST);
         }
     }
 }

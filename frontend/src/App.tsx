@@ -3,12 +3,16 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { Container, Typography } from '@mui/material';
 import { ReservationList } from './components/ReservationList';
 import { ReservationForm } from './components/ReservationForm';
+import { AuthHeader } from './components/AuthHeader';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { api } from './services/api';
 import { Reservation } from './types/reservation';
 
-function App() {
+const AppContent = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user, isAdmin } = useAuth();
 
   const fetchReservations = async () => {
     try {
@@ -36,18 +40,28 @@ function App() {
   }, []);
 
   return (
+    <Container>
+      <AuthHeader />
+      <Typography variant="h4" component="h1" sx={{ mt: 4, mb: 4 }}>
+        Booking System
+      </Typography>
+      {user && !isAdmin && <ReservationForm onSuccess={fetchReservations} />}
+      <ReservationList 
+        reservations={reservations} 
+        onCancel={handleCancel}
+        loading={loading}
+        showUsername={isAdmin}
+      />
+    </Container>
+  );
+};
+
+function App() {
+  return (
     <Router>
-      <Container>
-        <Typography variant="h4" component="h1" sx={{ mt: 4, mb: 4 }}>
-          Booking System
-        </Typography>
-        <ReservationForm onSuccess={fetchReservations} />
-        <ReservationList 
-          reservations={reservations} 
-          onCancel={handleCancel}
-          loading={loading}
-        />
-      </Container>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 }

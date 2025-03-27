@@ -6,6 +6,7 @@ use App\DTO\ReservationRequest;
 use App\Entity\DailyAvailability;
 use App\Entity\Reservation;
 use App\Entity\Settings;
+use App\Entity\User;
 use App\Repository\DailyAvailabilityRepository;
 use App\Repository\ReservationRepository;
 use App\Repository\SettingsRepository;
@@ -21,7 +22,7 @@ class ReservationService
     ) {
     }
 
-    public function createReservation(ReservationRequest $request): Reservation
+    public function createReservation(ReservationRequest $request, User $user): Reservation
     {
         $this->entityManager->beginTransaction();
         try {
@@ -38,7 +39,8 @@ class ReservationService
             $reservation->setStartDate($request->getStartDate())
                 ->setEndDate($request->getEndDate())
                 ->setTotalPrice($totalPrice)
-                ->setStatus('active');
+                ->setStatus('active')
+                ->setUser($user);
 
             $this->entityManager->persist($reservation);
 
@@ -55,12 +57,22 @@ class ReservationService
         }
     }
 
-    public function cancelReservation(Reservation $reservation): void
+    public function cancelReservation(int $reservationId, User $user): void
     {
         $this->entityManager->beginTransaction();
         try {
+            $reservation = $this->reservationRepository->find($reservationId);
+            
+            if (!$reservation) {
+                throw new \RuntimeException('Reservation not found');
+            }
+
             if ($reservation->getStatus() !== 'active') {
                 throw new \RuntimeException('Reservation is not active');
+            }
+
+            if ($reservation->getUser() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+                throw new \RuntimeException('You are not authorized to cancel this reservation');
             }
 
             $reservation->setStatus('cancelled');
@@ -76,14 +88,28 @@ class ReservationService
         }
     }
 
-    public function getAllReservations(): array
+    public function getAllReservations(?User $user = null): array
     {
-        return $this->reservationRepository->findAll();
+        if ($user === null || in_array('ROLE_ADMIN', $user->getRoles())) {
+            return $this->reservationRepository->findAll();
+        }
+        
+        return $this->reservationRepository->findBy(['user' => $user]);
     }
 
-    public function getReservation(int $id): ?Reservation
+    public function getReservation(int $id, ?User $user = null): ?Reservation
     {
-        return $this->reservationRepository->find($id);
+        $reservation = $this->reservationRepository->find($id);
+        
+        if ($reservation === null) {
+            return null;
+        }
+
+        if ($user === null || in_array('ROLE_ADMIN', $user->getRoles()) || $reservation->getUser() === $user) {
+            return $reservation;
+        }
+
+        throw new \RuntimeException('You are not authorized to view this reservation');
     }
 
     private function isAvailable(\DateTimeInterface $startDate, \DateTimeInterface $endDate): bool

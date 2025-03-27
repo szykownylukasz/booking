@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\ReservationRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+use App\Entity\User;
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
 class Reservation
@@ -12,25 +14,36 @@ class Reservation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['reservation:read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeInterface $startDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeInterface $endDate = null;
 
     #[ORM\Column]
+    #[Groups(['reservation:read'])]
     private ?float $totalPrice = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['reservation:read'])]
     private ?string $status = 'active';
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeInterface $createdAt;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeInterface $updatedAt;
+
+    #[ORM\ManyToOne(inversedBy: 'reservations')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
     public function __construct()
     {
@@ -107,5 +120,22 @@ class Reservation
     public function updateTimestamp(): void
     {
         $this->updatedAt = new \DateTime();
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+        return $this;
+    }
+
+    #[Groups(['reservation:read'])]
+    public function getUserUsername(): ?string
+    {
+        return $this->user ? $this->user->getUsername() : null;
     }
 }
