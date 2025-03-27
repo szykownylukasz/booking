@@ -14,8 +14,16 @@ export const AuthHeader: React.FC = () => {
             await login(username, password);
             setOpen(false);
             setError('');
+            setUsername('');
+            setPassword('');
         } catch (err) {
             setError('Invalid credentials');
+        }
+    };
+
+    const handleKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            handleLogin();
         }
     };
 
@@ -51,6 +59,7 @@ export const AuthHeader: React.FC = () => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onKeyPress={handleKeyPress}
                             fullWidth
                         />
                         {error && (

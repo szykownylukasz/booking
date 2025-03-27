@@ -1,5 +1,17 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, CircularProgress, Box } from '@mui/material';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Paper, 
+  Button, 
+  CircularProgress,
+  Box,
+  Typography
+} from '@mui/material';
 import { Reservation } from '../types/reservation';
 
 interface ReservationListProps {
@@ -9,7 +21,23 @@ interface ReservationListProps {
   showUsername?: boolean;
 }
 
-export const ReservationList: React.FC<ReservationListProps> = ({ reservations, onCancel, loading, showUsername = false }) => {
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'success.main';
+    case 'cancelled':
+      return 'error.main';
+    default:
+      return 'text.primary';
+  }
+};
+
+export const ReservationList: React.FC<ReservationListProps> = ({ 
+  reservations, 
+  onCancel, 
+  loading,
+  showUsername = false 
+}) => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -30,7 +58,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({ reservations, 
     <TableContainer component={Paper} sx={{ mt: 4 }}>
       <Table>
         <TableHead>
-          <TableRow>
+          <TableRow sx={{ backgroundColor: 'grey.100' }}>
             {showUsername && <TableCell>User</TableCell>}
             <TableCell>Start Date</TableCell>
             <TableCell>End Date</TableCell>
@@ -46,7 +74,11 @@ export const ReservationList: React.FC<ReservationListProps> = ({ reservations, 
               <TableCell>{new Date(reservation.startDate).toLocaleDateString()}</TableCell>
               <TableCell>{new Date(reservation.endDate).toLocaleDateString()}</TableCell>
               <TableCell>${reservation.totalPrice}</TableCell>
-              <TableCell>{reservation.status}</TableCell>
+              <TableCell>
+                <Typography color={getStatusColor(reservation.status)}>
+                  {reservation.status}
+                </Typography>
+              </TableCell>
               <TableCell>
                 {reservation.status === 'active' && (
                   <Button
