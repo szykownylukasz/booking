@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { Container, Typography } from '@mui/material';
+import { Container, Typography, Button, Box } from '@mui/material';
 import { ReservationList } from './components/ReservationList';
 import { ReservationForm } from './components/ReservationForm';
 import { AuthHeader } from './components/AuthHeader';
@@ -8,10 +8,12 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';
 import { api } from './services/api';
 import { Reservation } from './types/reservation';
+import { SettingsModal } from './components/SettingsModal';
 
 const AppContent = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { user, isAdmin } = useAuth();
 
   const fetchReservations = async () => {
@@ -48,16 +50,33 @@ const AppContent = () => {
   return (
     <Container>
       <AuthHeader />
-      <Typography variant="h4" component="h1" sx={{ mt: 4, mb: 4 }}>
-        Booking System
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 4 }}>
+        <Typography variant="h4" component="h1">
+          Booking System
+        </Typography>
+        {isAdmin && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setSettingsOpen(true)}
+          >
+            Settings
+          </Button>
+        )}
+      </Box>
       {user && !isAdmin && <ReservationForm onSuccess={fetchReservations} />}
-      {user && ( // Show list only when user is logged in
+      {user && (
         <ReservationList 
           reservations={reservations} 
           onCancel={handleCancel}
           loading={loading}
           showUsername={isAdmin}
+        />
+      )}
+      {isAdmin && (
+        <SettingsModal
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
         />
       )}
     </Container>
