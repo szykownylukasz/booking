@@ -35,14 +35,23 @@ class CreateUsersCommand extends Command
         
         $this->entityManager->persist($admin);
 
-        // Create regular user
-        $user = new User();
-        $user->setUsername('user');
-        $user->setRoles(['ROLE_USER']);
-        $hashedPassword = $this->passwordHasher->hashPassword($user, 'user');
-        $user->setPassword($hashedPassword);
+        // Create first regular user
+        $user1 = new User();
+        $user1->setUsername('user1');
+        $user1->setRoles(['ROLE_USER']);
+        $hashedPassword = $this->passwordHasher->hashPassword($user1, 'user1');
+        $user1->setPassword($hashedPassword);
         
-        $this->entityManager->persist($user);
+        $this->entityManager->persist($user1);
+
+        // Create second regular user
+        $user2 = new User();
+        $user2->setUsername('user2');
+        $user2->setRoles(['ROLE_USER']);
+        $hashedPassword = $this->passwordHasher->hashPassword($user2, 'user2');
+        $user2->setPassword($hashedPassword);
+        
+        $this->entityManager->persist($user2);
 
         $this->entityManager->flush();
 

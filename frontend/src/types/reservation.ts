@@ -7,6 +7,7 @@ export interface Reservation {
     createdAt: string;
     updatedAt: string;
     username?: string;
+    userUsername?: string;
 }
 
 export interface ReservationRequest {

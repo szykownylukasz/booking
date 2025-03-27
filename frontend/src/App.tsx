@@ -17,10 +17,15 @@ const AppContent = () => {
   const fetchReservations = async () => {
     try {
       setLoading(true);
-      const data = await api.getReservations();
-      setReservations(data);
+      if (user) {
+        const data = await api.getReservations();
+        setReservations(data);
+      } else {
+        setReservations([]);
+      }
     } catch (error) {
       console.error('Failed to fetch reservations:', error);
+      setReservations([]);
     } finally {
       setLoading(false);
     }
@@ -35,9 +40,10 @@ const AppContent = () => {
     }
   };
 
+  // Get reservations on login/logout
   useEffect(() => {
     fetchReservations();
-  }, []);
+  }, [user]); // Add user as dependency
 
   return (
     <Container>
@@ -46,12 +52,14 @@ const AppContent = () => {
         Booking System
       </Typography>
       {user && !isAdmin && <ReservationForm onSuccess={fetchReservations} />}
-      <ReservationList 
-        reservations={reservations} 
-        onCancel={handleCancel}
-        loading={loading}
-        showUsername={isAdmin}
-      />
+      {user && ( // Show list only when user is logged in
+        <ReservationList 
+          reservations={reservations} 
+          onCancel={handleCancel}
+          loading={loading}
+          showUsername={isAdmin}
+        />
+      )}
     </Container>
   );
 };

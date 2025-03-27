@@ -1,7 +1,22 @@
 import axios from 'axios';
-import { LoginRequest, AuthResponse } from '../types/auth';
+import { LoginRequest, AuthResponse, User } from '../types/auth';
 
 const API_URL = 'http://localhost:81/api';
+
+function parseJwt(token: string) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        console.error('Error parsing JWT:', e);
+        return null;
+    }
+}
 
 export const authService = {
     login: async (credentials: LoginRequest): Promise<AuthResponse> => {
@@ -13,20 +28,25 @@ export const authService = {
                 throw new Error('Token not found in response');
             }
 
-            const { token } = response.data;
-            const user = {
-                id: 1,
-                username: credentials.username,
-                roles: response.data.roles || ['ROLE_USER']
-            };
+            const token = response.data.token;
+            const decodedToken = parseJwt(token);
+            
+            if (!decodedToken) {
+                throw new Error('Invalid token format');
+            }
 
-            // Dodajemy console.log do debugowania
-            console.log('Saving user to localStorage:', user);
+            const user: User = {
+                username: decodedToken.username,
+                roles: decodedToken.roles,
+                id: 0 // ID is not needed in this case
+            };
+            
+            console.log('Decoded token:', decodedToken);
+            console.log('Created user object:', user);
             
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
             
-            // Weryfikujemy czy dane zostały zapisane
             console.log('Verification - localStorage user:', localStorage.getItem('user'));
             console.log('Verification - localStorage token:', localStorage.getItem('token'));
 
@@ -58,7 +78,6 @@ export const authService = {
             return user;
         } catch (error) {
             console.error('Error getting current user:', error);
-            // W przypadku błędu usuwamy potencjalnie uszkodzone dane
             localStorage.removeItem('user');
             return null;
         }
