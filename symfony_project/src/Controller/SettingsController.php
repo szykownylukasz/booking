@@ -37,8 +37,8 @@ class SettingsController extends AbstractController
     #[OA\Tag(name: 'Settings')]
     public function getSettings(): JsonResponse
     {
-        $defaultTotalSpots = $this->settingsRepository->findOneBy(['key' => Settings::DEFAULT_TOTAL_SPOTS]);
-        $dailyPrice = $this->settingsRepository->findOneBy(['key' => Settings::DAILY_PRICE]);
+        $defaultTotalSpots = $this->settingsRepository->findOneBy(['name' => Settings::DEFAULT_TOTAL_SPOTS]);
+        $dailyPrice = $this->settingsRepository->findOneBy(['name' => Settings::DAILY_PRICE]);
 
         return new JsonResponse([
             'maxReservationsPerDay' => $defaultTotalSpots ? (int)$defaultTotalSpots->getValue() : 1,
@@ -89,17 +89,17 @@ class SettingsController extends AbstractController
             return new JsonResponse(['error' => 'pricePerDay cannot be negative'], 400);
         }
 
-        $defaultTotalSpots = $this->settingsRepository->findOneBy(['key' => Settings::DEFAULT_TOTAL_SPOTS]);
+        $defaultTotalSpots = $this->settingsRepository->findOneBy(['name' => Settings::DEFAULT_TOTAL_SPOTS]);
         if (!$defaultTotalSpots) {
             $defaultTotalSpots = new Settings();
-            $defaultTotalSpots->setKey(Settings::DEFAULT_TOTAL_SPOTS);
+            $defaultTotalSpots->setName(Settings::DEFAULT_TOTAL_SPOTS);
         }
         $defaultTotalSpots->setValue((string)$maxReservations);
 
-        $dailyPrice = $this->settingsRepository->findOneBy(['key' => Settings::DAILY_PRICE]);
+        $dailyPrice = $this->settingsRepository->findOneBy(['name' => Settings::DAILY_PRICE]);
         if (!$dailyPrice) {
             $dailyPrice = new Settings();
-            $dailyPrice->setKey(Settings::DAILY_PRICE);
+            $dailyPrice->setName(Settings::DAILY_PRICE);
         }
         $dailyPrice->setValue((string)$pricePerDay);
 

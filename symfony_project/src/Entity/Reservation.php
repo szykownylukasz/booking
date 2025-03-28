@@ -17,13 +17,11 @@ class Reservation
     #[Groups(['reservation:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['reservation:read'])]
-    private ?\DateTimeInterface $startDate = null;
+    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    private ?\DateTimeImmutable $startDate = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['reservation:read'])]
-    private ?\DateTimeInterface $endDate = null;
+    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\Column]
     #[Groups(['reservation:read'])]
@@ -33,13 +31,11 @@ class Reservation
     #[Groups(['reservation:read'])]
     private ?string $status = 'active';
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['reservation:read'])]
-    private ?\DateTimeInterface $createdAt;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['reservation:read'])]
-    private ?\DateTimeInterface $updatedAt;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $updatedAt;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
@@ -47,8 +43,8 @@ class Reservation
 
     public function __construct()
     {
-        $this->createdAt = new \DateTime();
-        $this->updatedAt = new \DateTime();
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -56,25 +52,37 @@ class Reservation
         return $this->id;
     }
 
-    public function getStartDate(): ?\DateTimeInterface
+    #[Groups(['reservation:read'])]
+    public function getStartDate(): string
+    {
+        return $this->startDate ? $this->startDate->format('Y-m-d') : '';
+    }
+
+    public function getRawStartDate(): ?\DateTimeImmutable
     {
         return $this->startDate;
     }
 
     public function setStartDate(\DateTimeInterface $startDate): self
     {
-        $this->startDate = $startDate;
+        $this->startDate = $startDate instanceof \DateTimeImmutable ? $startDate : \DateTimeImmutable::createFromMutable($startDate);
         return $this;
     }
 
-    public function getEndDate(): ?\DateTimeInterface
+    #[Groups(['reservation:read'])]
+    public function getEndDate(): string
+    {
+        return $this->endDate ? $this->endDate->format('Y-m-d') : '';
+    }
+
+    public function getRawEndDate(): ?\DateTimeImmutable
     {
         return $this->endDate;
     }
 
     public function setEndDate(\DateTimeInterface $endDate): self
     {
-        $this->endDate = $endDate;
+        $this->endDate = $endDate instanceof \DateTimeImmutable ? $endDate : \DateTimeImmutable::createFromMutable($endDate);
         return $this;
     }
 
@@ -100,26 +108,26 @@ class Reservation
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeInterface
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function getUpdatedAt(): ?\DateTimeInterface
+    public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(\DateTimeInterface $updatedAt): self
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
         return $this;
     }
 
     #[ORM\PreUpdate]
-    public function updateTimestamp(): void
+    public function setUpdatedAtValue(): void
     {
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getUser(): ?User

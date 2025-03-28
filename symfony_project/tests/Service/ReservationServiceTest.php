@@ -6,6 +6,7 @@ use App\DTO\ReservationRequest;
 use App\Entity\DailyAvailability;
 use App\Entity\Reservation;
 use App\Entity\Settings;
+use App\Entity\User;
 use App\Repository\DailyAvailabilityRepository;
 use App\Repository\ReservationRepository;
 use App\Repository\SettingsRepository;
@@ -20,6 +21,7 @@ class ReservationServiceTest extends TestCase
     private ReservationRepository $reservationRepository;
     private SettingsRepository $settingsRepository;
     private ReservationService $service;
+    private User $testUser;
 
     protected function setUp(): void
     {
@@ -28,12 +30,32 @@ class ReservationServiceTest extends TestCase
         $this->reservationRepository = $this->createMock(ReservationRepository::class);
         $this->settingsRepository = $this->createMock(SettingsRepository::class);
 
+        $this->testUser = new User();
+        $this->testUser->setUsername('testuser');
+        $this->testUser->setPassword('test');
+        $this->testUser->setRoles(['ROLE_USER']);
+
         $this->service = new ReservationService(
             $this->entityManager,
             $this->dailyAvailabilityRepository,
             $this->reservationRepository,
             $this->settingsRepository
         );
+
+        // Setup default settings
+        $defaultPrice = new Settings();
+        $defaultPrice->setName(Settings::DAILY_PRICE)
+            ->setValue('100.00');
+
+        $defaultSpots = new Settings();
+        $defaultSpots->setName(Settings::DEFAULT_TOTAL_SPOTS)
+            ->setValue('10');
+
+        $this->settingsRepository->method('findByKey')
+            ->willReturnMap([
+                [Settings::DAILY_PRICE, $defaultPrice],
+                [Settings::DEFAULT_TOTAL_SPOTS, $defaultSpots]
+            ]);
     }
 
     public function testCreateReservationSuccess(): void
@@ -42,19 +64,6 @@ class ReservationServiceTest extends TestCase
         $startDate = new \DateTime('2025-04-01');
         $endDate = new \DateTime('2025-04-03');
         $request = new ReservationRequest($startDate, $endDate);
-
-        $defaultPrice = new Settings();
-        $defaultPrice->setValue('100.00');
-        
-        $defaultSpots = new Settings();
-        $defaultSpots->setValue('10');
-
-        $this->settingsRepository
-            ->method('findByKey')
-            ->willReturnMap([
-                [Settings::DAILY_PRICE, $defaultPrice],
-                [Settings::DEFAULT_TOTAL_SPOTS, $defaultSpots],
-            ]);
 
         $availability = new DailyAvailability();
         $availability->setAvailableSpots(10)->setTotalSpots(10);
@@ -68,13 +77,14 @@ class ReservationServiceTest extends TestCase
         $this->entityManager->expects($this->never())->method('rollback');
 
         // Act
-        $reservation = $this->service->createReservation($request);
+        $reservation = $this->service->createReservation($request, $this->testUser);
 
         // Assert
-        $this->assertEquals($startDate, $reservation->getStartDate());
-        $this->assertEquals($endDate, $reservation->getEndDate());
+        $this->assertEquals($startDate->format('Y-m-d'), $reservation->getStartDate());
+        $this->assertEquals($endDate->format('Y-m-d'), $reservation->getEndDate());
         $this->assertEquals(300.0, $reservation->getTotalPrice()); // 3 dni * 100
         $this->assertEquals('active', $reservation->getStatus());
+        $this->assertEquals($this->testUser, $reservation->getUser());
     }
 
     public function testCreateReservationNoAvailability(): void
@@ -99,33 +109,25 @@ class ReservationServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('No available spots for the selected dates');
         
-        $this->service->createReservation($request);
+        $this->service->createReservation($request, $this->testUser);
     }
 
     public function testCancelReservationSuccess(): void
     {
         // Arrange
-        $startDate = new \DateTime('2025-04-01');
-        $endDate = new \DateTime('2025-04-03');
-        
         $reservation = new Reservation();
-        $reservation->setStatus('active')
-                   ->setStartDate($startDate)
-                   ->setEndDate($endDate);
+        $reservation->setStatus('active');
+        $reservation->setUser($this->testUser);
+        $reservation->setStartDate(new \DateTime('2025-04-01'));
+        $reservation->setEndDate(new \DateTime('2025-04-03'));
 
-        $availability = new DailyAvailability();
-        $availability->setAvailableSpots(9)->setTotalSpots(10);
-
-        $this->dailyAvailabilityRepository
-            ->method('findOneBy')
-            ->willReturn($availability);
-
-        $this->entityManager->expects($this->once())->method('beginTransaction');
-        $this->entityManager->expects($this->once())->method('commit');
-        $this->entityManager->expects($this->never())->method('rollback');
+        $this->reservationRepository
+            ->method('find')
+            ->with(1)
+            ->willReturn($reservation);
 
         // Act
-        $this->service->cancelReservation($reservation);
+        $this->service->cancelReservation(1, $this->testUser);
 
         // Assert
         $this->assertEquals('cancelled', $reservation->getStatus());
@@ -136,15 +138,17 @@ class ReservationServiceTest extends TestCase
         // Arrange
         $reservation = new Reservation();
         $reservation->setStatus('cancelled');
+        $reservation->setUser($this->testUser);
 
-        $this->entityManager->expects($this->once())->method('beginTransaction');
-        $this->entityManager->expects($this->once())->method('rollback');
-        $this->entityManager->expects($this->never())->method('commit');
+        $this->reservationRepository
+            ->method('find')
+            ->with(1)
+            ->willReturn($reservation);
 
         // Assert & Act
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Reservation is not active');
         
-        $this->service->cancelReservation($reservation);
+        $this->service->cancelReservation(1, $this->testUser);
     }
 }

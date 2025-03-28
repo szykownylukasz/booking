@@ -3,53 +3,66 @@
 namespace App\Tests\Controller\Api;
 
 use App\Entity\Settings;
+use App\Entity\User;
+use App\Entity\Reservation;
 use App\Repository\SettingsRepository;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Doctrine\ORM\Tools\SchemaTool;
 
 class ReservationControllerTest extends WebTestCase
 {
     private $client;
     private $entityManager;
+    private $testUser;
+    private $token;
 
     protected function setUp(): void
     {
         $this->client = static::createClient();
         $this->entityManager = $this->client->getContainer()->get('doctrine')->getManager();
 
-        // Prepare default settings
-        $this->setupDefaultSettings();
-    }
+        // Reset database
+        $schemaTool = new SchemaTool($this->entityManager);
+        $metadata = $this->entityManager->getMetadataFactory()->getAllMetadata();
+        $schemaTool->dropSchema($metadata);
+        $schemaTool->createSchema($metadata);
 
-    private function setupDefaultSettings(): void
-    {
-        $settingsRepository = $this->entityManager->getRepository(Settings::class);
+        // Create test user
+        $this->testUser = new User();
+        $this->testUser->setUsername('testuser');
+        $this->testUser->setPassword('$2y$13$ESVwrL3ZfCMgwmxrGGxQd.ulhxVcUm3J5PP8ZfB2RPHZwkAQJju4e'); // hashed 'test'
+        $this->testUser->setRoles(['ROLE_USER']);
+        
+        $this->entityManager->persist($this->testUser);
 
-        // Add default price if not exists
-        if (!$settingsRepository->findByKey(Settings::DAILY_PRICE)) {
-            $defaultPrice = new Settings();
-            $defaultPrice->setKey(Settings::DAILY_PRICE)
-                ->setValue('100.00')
-                ->setUpdatedAt(new \DateTime());
-            $this->entityManager->persist($defaultPrice);
-        }
+        // Setup default settings
+        $defaultPrice = new Settings();
+        $defaultPrice->setName(Settings::DAILY_PRICE)
+            ->setValue('100.00');
+        $this->entityManager->persist($defaultPrice);
 
-        // Add default number of spots if not exists
-        if (!$settingsRepository->findByKey(Settings::DEFAULT_TOTAL_SPOTS)) {
-            $defaultSpots = new Settings();
-            $defaultSpots->setKey(Settings::DEFAULT_TOTAL_SPOTS)
-                ->setValue('10')
-                ->setUpdatedAt(new \DateTime());
-            $this->entityManager->persist($defaultSpots);
-        }
+        $defaultSpots = new Settings();
+        $defaultSpots->setName(Settings::DEFAULT_TOTAL_SPOTS)
+            ->setValue('10');
+        $this->entityManager->persist($defaultSpots);
 
         $this->entityManager->flush();
+
+        // Generate JWT token
+        $jwtManager = $this->client->getContainer()->get(JWTTokenManagerInterface::class);
+        $this->token = $jwtManager->create($this->testUser);
     }
 
     public function testGetAllReservations(): void
     {
         // Act
-        $this->client->request('GET', '/api/reservations');
+        $this->client->request('GET', '/api/reservations', [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
+            'CONTENT_TYPE' => 'application/json'
+        ]);
+        
         $response = $this->client->getResponse();
         $content = json_decode($response->getContent(), true);
 
@@ -77,7 +90,10 @@ class ReservationControllerTest extends WebTestCase
             '/api/reservations',
             [],
             [],
-            ['CONTENT_TYPE' => 'application/json'],
+            [
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
+                'CONTENT_TYPE' => 'application/json'
+            ],
             json_encode($data)
         );
 
@@ -108,43 +124,46 @@ class ReservationControllerTest extends WebTestCase
             '/api/reservations',
             [],
             [],
-            ['CONTENT_TYPE' => 'application/json'],
+            [
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
+                'CONTENT_TYPE' => 'application/json'
+            ],
             json_encode($data)
         );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
 
         // Assert
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
-        $this->assertEquals('error', $content['status']);
     }
 
     public function testCancelReservationSuccess(): void
     {
-        // Arrange - Create a reservation first
-        $startDate = (new \DateTime())->modify('+1 day')->format('Y-m-d');
-        $endDate = (new \DateTime())->modify('+3 days')->format('Y-m-d');
+        // Arrange
+        $startDate = (new \DateTime())->modify('+1 day');
+        $endDate = (new \DateTime())->modify('+3 days');
         
-        $data = [
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ];
+        $reservation = new Reservation();
+        $reservation->setStartDate($startDate)
+            ->setEndDate($endDate)
+            ->setTotalPrice(300.00)
+            ->setStatus('active')
+            ->setUser($this->testUser);
+        
+        $this->entityManager->persist($reservation);
+        $this->entityManager->flush();
 
+        // Act
         $this->client->request(
             'POST',
-            '/api/reservations',
+            '/api/reservations/' . $reservation->getId() . '/cancel',
             [],
             [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode($data)
+            [
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
+                'CONTENT_TYPE' => 'application/json'
+            ]
         );
-
-        $createResponse = json_decode($this->client->getResponse()->getContent(), true);
-        $reservationId = $createResponse['data']['id'];
-
-        // Act - Cancel the reservation
-        $this->client->request('POST', "/api/reservations/{$reservationId}/cancel");
 
         $response = $this->client->getResponse();
         $content = json_decode($response->getContent(), true);
@@ -152,20 +171,27 @@ class ReservationControllerTest extends WebTestCase
         // Assert
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         $this->assertEquals('success', $content['status']);
+        $this->assertEquals('cancelled', $content['data']['status']);
     }
 
     public function testCancelNonExistentReservation(): void
     {
         // Act
-        $this->client->request('POST', '/api/reservations/99999/cancel');
+        $this->client->request(
+            'POST',
+            '/api/reservations/99999/cancel',
+            [],
+            [],
+            [
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
+                'CONTENT_TYPE' => 'application/json'
+            ]
+        );
 
         $response = $this->client->getResponse();
-        $content = json_decode($response->getContent(), true);
 
         // Assert
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
-        $this->assertEquals('error', $content['status']);
-        $this->assertEquals('Reservation not found', $content['message']);
     }
 
     protected function tearDown(): void

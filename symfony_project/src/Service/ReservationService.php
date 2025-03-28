@@ -27,17 +27,17 @@ class ReservationService
         $this->entityManager->beginTransaction();
         try {
             // Check availability for the date range
-            if (!$this->isAvailable($request->getStartDate(), $request->getEndDate())) {
+            if (!$this->isAvailable($request->getRawStartDate(), $request->getRawEndDate())) {
                 throw new \RuntimeException('No available spots for the selected dates');
             }
 
             // Calculate total price
-            $totalPrice = $this->calculateTotalPrice($request->getStartDate(), $request->getEndDate());
+            $totalPrice = $this->calculateTotalPrice($request->getRawStartDate(), $request->getRawEndDate());
 
             // Create reservation
             $reservation = new Reservation();
-            $reservation->setStartDate($request->getStartDate())
-                ->setEndDate($request->getEndDate())
+            $reservation->setStartDate($request->getRawStartDate())
+                ->setEndDate($request->getRawEndDate())
                 ->setTotalPrice($totalPrice)
                 ->setStatus('active')
                 ->setUser($user);
@@ -45,7 +45,7 @@ class ReservationService
             $this->entityManager->persist($reservation);
 
             // Update availability for each day
-            $this->updateAvailability($request->getStartDate(), $request->getEndDate(), -1);
+            $this->updateAvailability($request->getRawStartDate(), $request->getRawEndDate(), -1);
 
             $this->entityManager->flush();
             $this->entityManager->commit();
@@ -57,7 +57,7 @@ class ReservationService
         }
     }
 
-    public function cancelReservation(int $reservationId, User $user): void
+    public function cancelReservation(int $reservationId, User $user): Reservation
     {
         $this->entityManager->beginTransaction();
         try {
@@ -78,10 +78,12 @@ class ReservationService
             $reservation->setStatus('cancelled');
             
             // Restore availability for each day
-            $this->updateAvailability($reservation->getStartDate(), $reservation->getEndDate(), 1);
+            $this->updateAvailability($reservation->getRawStartDate(), $reservation->getRawEndDate(), 1);
 
             $this->entityManager->flush();
             $this->entityManager->commit();
+
+            return $reservation;
         } catch (\Exception $e) {
             $this->entityManager->rollback();
             throw $e;
@@ -112,7 +114,7 @@ class ReservationService
         throw new \RuntimeException('You are not authorized to view this reservation');
     }
 
-    private function isAvailable(\DateTimeInterface $startDate, \DateTimeInterface $endDate): bool
+    private function isAvailable(\DateTimeImmutable $startDate, \DateTimeImmutable $endDate): bool
     {
         $currentDate = clone $startDate;
         while ($currentDate <= $endDate) {
@@ -120,13 +122,13 @@ class ReservationService
             if ($availability->getAvailableSpots() <= 0) {
                 return false;
             }
-            $currentDate->modify('+1 day');
+            $currentDate = $currentDate->modify('+1 day');
         }
 
         return true;
     }
 
-    private function calculateTotalPrice(\DateTimeInterface $startDate, \DateTimeInterface $endDate): float
+    private function calculateTotalPrice(\DateTimeImmutable $startDate, \DateTimeImmutable $endDate): float
     {
         $totalPrice = 0.0;
         $currentDate = clone $startDate;
@@ -145,27 +147,27 @@ class ReservationService
                 $totalPrice += (float)$defaultPrice->getValue();
             }
 
-            $currentDate->modify('+1 day');
+            $currentDate = $currentDate->modify('+1 day');
         }
 
         return $totalPrice;
     }
 
-    private function updateAvailability(\DateTimeInterface $startDate, \DateTimeInterface $endDate, int $change): void
+    private function updateAvailability(\DateTimeImmutable $startDate, \DateTimeImmutable $endDate, int $change): void
     {
         $currentDate = clone $startDate;
         while ($currentDate <= $endDate) {
             $availability = $this->getOrCreateDailyAvailability($currentDate);
             $availability->setAvailableSpots($availability->getAvailableSpots() + $change);
             $this->entityManager->persist($availability);
-            $currentDate->modify('+1 day');
+            $currentDate = $currentDate->modify('+1 day');
         }
     }
 
-    private function getOrCreateDailyAvailability(\DateTimeInterface $date): DailyAvailability
+    private function getOrCreateDailyAvailability(\DateTimeImmutable $date): DailyAvailability
     {
         $dateFormatted = $date->format('Y-m-d');
-        $date = new \DateTime($dateFormatted); // Normalizacja daty do północy
+        $date = new \DateTimeImmutable($dateFormatted); // Normalizacja daty do północy
 
         $availability = $this->dailyAvailabilityRepository->findOneBy(['date' => $date]);
         if (!$availability) {

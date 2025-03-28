@@ -70,7 +70,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
         <TableBody>
           {reservations.map((reservation) => (
             <TableRow key={reservation.id}>
-              {showUsername && <TableCell>{reservation.userUsername}</TableCell>}
+              {showUsername && <TableCell>{reservation.username}</TableCell>}
               <TableCell>{new Date(reservation.startDate).toLocaleDateString()}</TableCell>
               <TableCell>{new Date(reservation.endDate).toLocaleDateString()}</TableCell>
               <TableCell>${reservation.totalPrice}</TableCell>

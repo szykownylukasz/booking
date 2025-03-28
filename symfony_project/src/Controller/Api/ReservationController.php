@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\Context\Normalizer\DateTimeNormalizerContextBuilder;
 
 #[Route('/api')]
 class ReservationController extends AbstractController
@@ -98,11 +99,11 @@ class ReservationController extends AbstractController
     public function cancel(int $id): JsonResponse
     {
         try {
-            $this->reservationService->cancelReservation($id, $this->getUser());
+            $reservation = $this->reservationService->cancelReservation($id, $this->getUser());
             return $this->json([
                 'status' => 'success',
-                'message' => 'Reservation cancelled successfully'
-            ]);
+                'data' => $reservation
+            ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
         } catch (\Exception $e) {
             return $this->json([
                 'status' => 'error',

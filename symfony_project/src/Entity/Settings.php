@@ -20,7 +20,7 @@ class Settings
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    private ?string $key = null;
+    private ?string $name = null;
 
     #[ORM\Column(type: 'text')]
     private ?string $value = null;
@@ -38,14 +38,14 @@ class Settings
         return $this->id;
     }
 
-    public function getKey(): ?string
+    public function getName(): ?string
     {
-        return $this->key;
+        return $this->name;
     }
 
-    public function setKey(string $key): self
+    public function setName(string $name): self
     {
-        $this->key = $key;
+        $this->name = $name;
         return $this;
     }
 
@@ -57,12 +57,19 @@ class Settings
     public function setValue(string $value): self
     {
         $this->value = $value;
+        $this->updatedAt = new \DateTime();
         return $this;
     }
 
     public function getUpdatedAt(): ?\DateTimeInterface
     {
         return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeInterface $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+        return $this;
     }
 
     #[ORM\PreUpdate]
