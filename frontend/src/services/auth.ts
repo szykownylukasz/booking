@@ -23,7 +23,6 @@ export const authService = {
     login: async (credentials: LoginRequest): Promise<AuthResponse> => {
         try {
             const response = await axios.post(`${API_URL}/login`, credentials);
-            console.log('Login response:', response.data);
             
             if (!response.data.token) {
                 throw new Error('Token not found in response');
@@ -39,22 +38,15 @@ export const authService = {
             const user: User = {
                 username: decodedToken.username,
                 roles: decodedToken.roles,
-                id: 0 // ID is not needed in this case
+                id: 0 
             };
-            
-            console.log('Decoded token:', decodedToken);
-            console.log('Created user object:', user);
             
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
             
-            console.log('Verification - localStorage user:', localStorage.getItem('user'));
-            console.log('Verification - localStorage token:', localStorage.getItem('token'));
-
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             return { token, user };
         } catch (error) {
-            console.error('Login error:', error);
             throw error;
         }
     },
@@ -68,14 +60,12 @@ export const authService = {
     getCurrentUser: () => {
         try {
             const userStr = localStorage.getItem('user');
-            console.log('getCurrentUser - userStr:', userStr);
             
             if (!userStr) {
                 return null;
             }
             
             const user = JSON.parse(userStr);
-            console.log('getCurrentUser - parsed user:', user);
             return user;
         } catch (error) {
             console.error('Error getting current user:', error);

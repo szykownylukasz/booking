@@ -55,45 +55,55 @@ export const ReservationList: React.FC<ReservationListProps> = ({
   }
 
   return (
-    <TableContainer component={Paper} sx={{ mt: 4 }}>
-      <Table>
-        <TableHead>
-          <TableRow sx={{ backgroundColor: 'grey.100' }}>
-            {showUsername && <TableCell>User</TableCell>}
-            <TableCell>Start Date</TableCell>
-            <TableCell>End Date</TableCell>
-            <TableCell>Total Price</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {reservations.map((reservation) => (
-            <TableRow key={reservation.id}>
-              {showUsername && <TableCell>{reservation.username}</TableCell>}
-              <TableCell>{new Date(reservation.startDate).toLocaleDateString()}</TableCell>
-              <TableCell>{new Date(reservation.endDate).toLocaleDateString()}</TableCell>
-              <TableCell>${reservation.totalPrice}</TableCell>
-              <TableCell>
-                <Typography color={getStatusColor(reservation.status)}>
-                  {reservation.status}
-                </Typography>
-              </TableCell>
-              <TableCell>
-                {reservation.status === 'active' && (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => onCancel(reservation.id)}
-                  >
-                    Cancel
-                  </Button>
-                )}
-              </TableCell>
+    <Box sx={{ mt: 6 }}>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          boxShadow: 'none',
+          border: '1px solid #e0e0e0',
+          tableLayout: 'fixed',
+          width: '100%'
+        }}
+      >
+        <Table>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'grey.100', fontSize: 12, textTransform: 'uppercase', fontWeight: 'bold' }}>
+              <TableCell align="center" sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>Start Date</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>End Date</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>Total Price</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>Status</TableCell>
+              {showUsername && <TableCell align="center" sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>User</TableCell>}
+              <TableCell align="center" sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>Actions</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {reservations.map((reservation) => (
+              <TableRow key={reservation.id}>
+                <TableCell align="center">{new Date(reservation.startDate).toLocaleDateString()}</TableCell>
+                <TableCell align="center">{new Date(reservation.endDate).toLocaleDateString()}</TableCell>
+                <TableCell align="center">${reservation.totalPrice}</TableCell>
+                <TableCell align="center">
+                  <Typography color={getStatusColor(reservation.status)}>
+                    {reservation.status}
+                  </Typography>
+                </TableCell>
+                {showUsername && <TableCell align="center">{reservation.userUsername || reservation.user?.username}</TableCell>}
+                <TableCell align="center">
+                  {reservation.status === 'active' && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => onCancel(reservation.id)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };

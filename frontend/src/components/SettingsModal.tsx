@@ -29,7 +29,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       setLoading(true);
       setError(null);
       const data = await api.getSettings();
-      console.log('Loaded settings:', data);
       setSettings(data);
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -49,7 +48,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       onClose();
     } catch (error) {
       console.error('Failed to update settings:', error);
-      setError('Failed to save settings. Please try again.');
+      setError('Failed to update settings. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -58,15 +57,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   if (!open) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Global Settings</DialogTitle>
-      <DialogContent>
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          maxWidth: '500px',
+          p: 2,
+          minHeight: '400px'
+        }
+      }}
+    >
+      <DialogTitle sx={{ pb: 3, fontSize: 25 }}>Global Settings</DialogTitle>
+      <DialogContent sx={{ py: 3 }}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
             <CircularProgress />
           </Box>
         ) : settings ? (
-          <Box sx={{ pt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {error && (
               <Box sx={{ color: 'error.main', mb: 2 }}>
                 {error}
@@ -84,6 +95,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               margin="normal"
               inputProps={{ min: 1 }}
               disabled={saving}
+              sx={{ mb: 2 }}
             />
             <TextField
               fullWidth
@@ -101,7 +113,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
           </Box>
         ) : null}
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose} disabled={loading || saving}>
           Cancel
         </Button>
@@ -111,7 +123,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
           disabled={loading || saving || !settings}
           startIcon={saving ? <CircularProgress size={20} /> : null}
         >
-          Save
+          {saving ? 'Saving...' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>

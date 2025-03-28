@@ -48,10 +48,20 @@ export const AuthHeader: React.FC = () => {
                 </Button>
             )}
 
-            <Dialog open={open} onClose={() => setOpen(false)}>
-                <DialogTitle>Login</DialogTitle>
+            <Dialog 
+                open={open} 
+                onClose={() => setOpen(false)}
+                PaperProps={{
+                    sx: {
+                        minWidth: '400px',
+                        boxShadow: 1,
+                        p: 2
+                    }
+                }}
+            >
+                <DialogTitle sx={{ pb: 3, fontSize: 25 }}>Login</DialogTitle>
                 <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
                         <TextField
                             label="Username"
                             value={username}
@@ -75,7 +85,7 @@ export const AuthHeader: React.FC = () => {
                         )}
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
                     <Button onClick={() => setOpen(false)} disabled={isLoading}>Cancel</Button>
                     <Button 
                         onClick={handleLogin} 

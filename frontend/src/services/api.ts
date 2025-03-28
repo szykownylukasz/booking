@@ -16,7 +16,6 @@ const getAuthHeaders = () => {
 export const api = {
     createReservation: async (data: ReservationRequest): Promise<void> => {
         try {
-            console.log('Creating reservation with data:', data);
             await axios.post(`${config.API_URL}/reservations`, data, {
                 headers: getAuthHeaders()
             });
@@ -31,7 +30,6 @@ export const api = {
             const response = await axios.get(`${config.API_URL}/reservations`, {
                 headers: getAuthHeaders()
             });
-            console.log('Reservations response:', response.data);
             const reservations = response.data.data || response.data;
             if (!Array.isArray(reservations)) {
                 console.error('Reservations is not an array:', reservations);
@@ -62,8 +60,6 @@ export const api = {
             const response = await axios.get(`${config.API_URL}/settings`, {
                 headers: getAuthHeaders()
             });
-            console.log('Settings response:', response);
-            console.log('Settings data:', response.data);
             return response.data;
         } catch (error: any) {
             console.error('Error fetching settings:', error.response?.data || error);
@@ -73,11 +69,9 @@ export const api = {
 
     updateSettings: async (settings: Settings): Promise<void> => {
         try {
-            console.log('Updating settings with:', settings);
-            const response = await axios.put(`${config.API_URL}/settings`, settings, {
+            await axios.put(`${config.API_URL}/settings`, settings, {
                 headers: getAuthHeaders()
             });
-            console.log('Update settings response:', response.data);
         } catch (error: any) {
             console.error('Error updating settings:', error.response?.data || error);
             throw error;

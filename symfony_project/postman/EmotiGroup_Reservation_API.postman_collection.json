@@ -112,7 +112,7 @@
 							}
 						},
 						{
-							"name": "Błąd logowania",
+							"name": "Login error",
 							"originalRequest": {
 								"method": "POST",
 								"header": [

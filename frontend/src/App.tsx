@@ -11,56 +11,66 @@ import { Reservation } from './types/reservation';
 import { SettingsModal } from './components/SettingsModal';
 
 const WelcomeMessage = () => (
-  <Paper sx={{ p: 4, mt: 4, textAlign: 'center' }}>
-    <Typography variant="h4" component="h2" gutterBottom>
+  <Paper 
+    sx={{ 
+      p: 6, 
+      mt: 6, 
+      textAlign: 'center', 
+      maxWidth: '1200px', 
+      mx: 'auto',
+      boxShadow: 'none',
+      border: '1px solid #e0e0e0'
+    }}
+  >
+    <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 4 }}>
       Welcome to the Booking System
     </Typography>
-    <Typography variant="body1" paragraph>
+    <Typography variant="body1" paragraph sx={{ mb: 4 }}>
       This is a demonstration of a booking management system. Please log in to explore its features:
     </Typography>
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600, mx: 'auto' }}>
-      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 800, mx: 'auto', mb: 4 }}>
+      <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
         Available accounts:
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
-          <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2, height: '100%' }}>
+            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>
               Admin
             </Typography>
-            <Typography variant="body2">
-              Username: admin<br />
-              Password: admin
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Username: <strong>admin</strong><br />
+              Password: <strong>admin</strong>
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
               Can view all reservations and manage global settings
             </Typography>
           </Box>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2, height: '100%' }}>
+            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>
               Regular User 1
             </Typography>
-            <Typography variant="body2">
-              Username: user1<br />
-              Password: user1
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Username: <strong>user1</strong><br />
+              Password: <strong>user1</strong>
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
               Can manage their own reservations
             </Typography>
           </Box>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2, height: '100%' }}>
+            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>
               Regular User 2
             </Typography>
-            <Typography variant="body2">
-              Username: user2<br />
-              Password: user2
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Username: <strong>user2</strong><br />
+              Password: <strong>user2</strong>
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
               Can manage their own reservations
             </Typography>
           </Box>
@@ -109,20 +119,22 @@ const AppContent = () => {
   return (
     <Container>
       <AuthHeader />
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Booking System
-        </Typography>
-        {isAdmin && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setSettingsOpen(true)}
-          >
-            Settings
-          </Button>
-        )}
-      </Box>
+      {user && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 4 }}>
+          <Typography variant="h4" component="h1">
+            Booking System
+          </Typography>
+          {isAdmin && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setSettingsOpen(true)}
+            >
+              Settings
+            </Button>
+          )}
+        </Box>
+      )}
       {user ? (
         <>
           {!isAdmin && <ReservationForm onSuccess={fetchReservations} />}

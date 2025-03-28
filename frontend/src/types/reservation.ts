@@ -6,7 +6,11 @@ export interface Reservation {
     status: 'active' | 'cancelled';
     createdAt: string;
     updatedAt: string;
-    username?: string;
+    user?: {
+        id: number;
+        username: string;
+    };
+    userUsername?: string;
 }
 
 export interface ReservationRequest {
