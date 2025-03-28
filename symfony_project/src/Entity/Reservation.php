@@ -18,9 +18,11 @@ class Reservation
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeImmutable $startDate = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\Column]
@@ -32,13 +34,16 @@ class Reservation
     private ?string $status = 'active';
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Groups(['reservation:read'])]
     private ?\DateTimeImmutable $updatedAt;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['reservation:read'])]
     private ?User $user = null;
 
     public function __construct()

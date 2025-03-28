@@ -46,11 +46,13 @@ export const api = {
 
     cancelReservation: async (id: number): Promise<void> => {
         try {
-            await axios.post(`${config.API_URL}/reservations/${id}/cancel`, {}, {
+            await axios.patch(`${config.API_URL}/reservations/${id}`, {
+                status: 'cancelled'
+            }, {
                 headers: getAuthHeaders()
             });
         } catch (error: any) {
-            console.error('Error canceling reservation:', error.response?.data || error);
+            console.error('Error cancelling reservation:', error.response?.data || error);
             throw error;
         }
     },

@@ -114,6 +114,11 @@ class ReservationService
         throw new \RuntimeException('You are not authorized to view this reservation');
     }
 
+    public function updateReservation(Reservation $reservation): void
+    {
+        $this->entityManager->flush();
+    }
+
     private function isAvailable(\DateTimeImmutable $startDate, \DateTimeImmutable $endDate): bool
     {
         $currentDate = clone $startDate;

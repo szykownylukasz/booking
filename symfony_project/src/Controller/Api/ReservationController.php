@@ -162,40 +162,41 @@ class ReservationController extends AbstractController
                 )
             ),
             new OA\Response(
-                response: 400,
-                description: 'Error during reservation retrieval',
-                content: new OA\JsonContent(ref: '#/components/schemas/Error')
+                response: 404,
+                description: 'Reservation not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'error'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Reservation not found')
+                    ]
+                )
             )
         ],
         security: [['Bearer' => []]]
     )]
-    public function getReservation(int $id): JsonResponse
+    public function get(int $id): JsonResponse
     {
-        try {
-            $reservation = $this->reservationService->getReservation($id, $this->getUser());
-            
-            if (!$reservation) {
-                throw new \RuntimeException('Reservation not found');
-            }
+        $reservation = $this->reservationService->getReservation($id, $this->getUser());
 
-            return $this->json([
-                'status' => 'success',
-                'data' => $reservation
-            ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
-        } catch (\Exception $e) {
+        if (!$reservation) {
             return $this->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
-            ], Response::HTTP_BAD_REQUEST);
+                'message' => 'Reservation not found'
+            ], Response::HTTP_NOT_FOUND);
         }
+
+        return $this->json([
+            'status' => 'success',
+            'data' => $reservation
+        ]);
     }
 
-    #[Route('/reservations/{id}/cancel', name: 'cancel_reservation', methods: ['POST'])]
+    #[Route('/reservations/{id}', name: 'update_reservation', methods: ['PATCH'])]
     #[IsGranted('ROLE_USER')]
-    #[OA\Post(
-        path: '/api/reservations/{id}/cancel',
-        summary: 'Cancel reservation',
-        description: 'Cancel reservation by ID for logged-in user',
+    #[OA\Patch(
+        path: '/api/reservations/{id}',
+        summary: 'Update reservation',
+        description: 'Update reservation status (e.g. cancel)',
         tags: ['Reservations'],
         parameters: [
             new OA\Parameter(
@@ -205,10 +206,18 @@ class ReservationController extends AbstractController
                 schema: new OA\Schema(type: 'integer')
             )
         ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'status', type: 'string', example: 'cancelled')
+                ]
+            )
+        ),
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Reservation cancelled',
+                description: 'Reservation updated',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -217,26 +226,62 @@ class ReservationController extends AbstractController
                 )
             ),
             new OA\Response(
+                response: 404,
+                description: 'Reservation not found',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'error'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Reservation not found')
+                    ]
+                )
+            ),
+            new OA\Response(
                 response: 400,
-                description: 'Error during reservation cancellation',
-                content: new OA\JsonContent(ref: '#/components/schemas/Error')
+                description: 'Invalid status or reservation is already in requested status',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'error'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Reservation is already cancelled')
+                    ]
+                )
             )
         ],
         security: [['Bearer' => []]]
     )]
-    public function cancel(int $id): JsonResponse
+    public function update(int $id, Request $request): JsonResponse
     {
-        try {
-            $reservation = $this->reservationService->cancelReservation($id, $this->getUser());
-            return $this->json([
-                'status' => 'success',
-                'data' => $reservation
-            ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
-        } catch (\Exception $e) {
+        $data = json_decode($request->getContent(), true);
+        $status = $data['status'] ?? null;
+
+        if ($status !== 'cancelled') {
             return $this->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Invalid status'
             ], Response::HTTP_BAD_REQUEST);
         }
+
+        $reservation = $this->reservationService->getReservation($id, $this->getUser());
+
+        if (!$reservation) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Reservation not found'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($reservation->getStatus() === $status) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Reservation is already ' . $status
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $reservation->setStatus($status);
+        $this->reservationService->updateReservation($reservation);
+
+        return $this->json([
+            'status' => 'success',
+            'data' => $reservation
+        ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
     }
 }

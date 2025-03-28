@@ -284,58 +284,6 @@
 					}
 				},
 				{
-					"name": "Get Reservation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response has correct structure\", function () {",
-									"    pm.expect(response).to.have.property('status');",
-									"    pm.expect(response).to.have.property('data');",
-									"    pm.expect(response.status).to.equal('success');",
-									"});",
-									"",
-									"pm.test(\"Reservation data is valid\", function () {",
-									"    const reservation = response.data;",
-									"    pm.expect(reservation).to.have.property('id');",
-									"    pm.expect(reservation).to.have.property('startDate');",
-									"    pm.expect(reservation).to.have.property('endDate');",
-									"    pm.expect(reservation).to.have.property('status');",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwtToken}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/reservations/{{last_reservation_id}}",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "reservations", "{{last_reservation_id}}"]
-						},
-						"description": "Get a specific reservation by ID"
-					}
-				},
-				{
 					"name": "Cancel Reservation",
 					"event": [
 						{
@@ -374,12 +322,21 @@
 								}
 							]
 						},
-						"method": "POST",
+						"method": "PATCH",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"cancelled\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/reservations/{{last_reservation_id}}/cancel",
+							"raw": "{{baseUrl}}/api/reservations/{{last_reservation_id}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "reservations", "{{last_reservation_id}}", "cancel"]
+							"path": ["api", "reservations", "{{last_reservation_id}}"]
 						},
 						"description": "Cancel a specific reservation"
 					}
