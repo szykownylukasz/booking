@@ -1,9 +1,48 @@
 nelmio_api_doc:
     documentation:
         info:
-            title: Example Symfony Api App
-            description: This is an awesome app!
+            title: System Rezerwacji API
+            description: API do zarządzania rezerwacjami z autoryzacją JWT
             version: 1.0.0
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+            schemas:
+                Reservation:
+                    type: object
+                    properties:
+                        id:
+                            type: integer
+                        startDate:
+                            type: string
+                            format: date
+                        endDate:
+                            type: string
+                            format: date
+                        totalPrice:
+                            type: number
+                        status:
+                            type: string
+                            enum: [active, cancelled]
+                        createdAt:
+                            type: string
+                            format: datetime
+                        updatedAt:
+                            type: string
+                            format: datetime
+                Error:
+                    type: object
+                    properties:
+                        status:
+                            type: string
+                            example: error
+                        message:
+                            type: string
+        security:
+            - Bearer: []
     areas: # to filter documented areas
         path_patterns:
             - ^/api(?!/doc$) # Accepts routes under /api except /api/doc

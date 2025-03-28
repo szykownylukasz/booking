@@ -11,8 +11,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Context\Normalizer\DateTimeNormalizerContextBuilder;
+use OpenApi\Attributes as OA;
 
 #[Route('/api')]
+#[OA\Tag(name: 'Reservations', description: 'Operations on reservations')]
 class ReservationController extends AbstractController
 {
     public function __construct(
@@ -22,6 +24,34 @@ class ReservationController extends AbstractController
 
     #[Route('/reservations', name: 'get_reservations', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
+    #[OA\Get(
+        path: '/api/reservations',
+        summary: 'Get reservations',
+        description: 'Get list of reservations for logged user',
+        tags: ['Reservations'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'List of reservations',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'success'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/Reservation')
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Error during reservations retrieval',
+                content: new OA\JsonContent(ref: '#/components/schemas/Error')
+            )
+        ],
+        security: [['Bearer' => []]]
+    )]
     public function getReservations(): JsonResponse
     {
         try {
@@ -40,6 +70,40 @@ class ReservationController extends AbstractController
 
     #[Route('/reservations', name: 'create_reservation', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
+    #[OA\Post(
+        path: '/api/reservations',
+        summary: 'Create new reservation',
+        description: 'Creates a new reservation for the logged-in user',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['startDate', 'endDate'],
+                properties: [
+                    new OA\Property(property: 'startDate', type: 'string', format: 'date', example: '2025-04-01'),
+                    new OA\Property(property: 'endDate', type: 'string', format: 'date', example: '2025-04-03')
+                ]
+            )
+        ),
+        tags: ['Reservations'],
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Reservation created',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'success'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/Reservation')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: '  Error during reservation creation',
+                content: new OA\JsonContent(ref: '#/components/schemas/Error')
+            )
+        ],
+        security: [['Bearer' => []]]
+    )]
     public function create(Request $request): JsonResponse
     {
         try {
@@ -49,8 +113,8 @@ class ReservationController extends AbstractController
                 throw new \InvalidArgumentException('Start date and end date are required');
             }
 
-            $startDate = new \DateTime($data['startDate']);
-            $endDate = new \DateTime($data['endDate']);
+            $startDate = new \DateTimeImmutable($data['startDate']);
+            $endDate = new \DateTimeImmutable($data['endDate']);
 
             if ($endDate < $startDate) {
                 throw new \InvalidArgumentException('End date must be after or equal to start date');
@@ -73,6 +137,38 @@ class ReservationController extends AbstractController
 
     #[Route('/reservations/{id}', name: 'get_reservation', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
+    #[OA\Get(
+        path: '/api/reservations/{id}',
+        summary: 'Get reservation',
+        description: 'Get reservation by ID for logged-in user',
+        tags: ['Reservations'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Reservation',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'success'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/Reservation')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Error during reservation retrieval',
+                content: new OA\JsonContent(ref: '#/components/schemas/Error')
+            )
+        ],
+        security: [['Bearer' => []]]
+    )]
     public function getReservation(int $id): JsonResponse
     {
         try {
@@ -96,6 +192,38 @@ class ReservationController extends AbstractController
 
     #[Route('/reservations/{id}/cancel', name: 'cancel_reservation', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
+    #[OA\Post(
+        path: '/api/reservations/{id}/cancel',
+        summary: 'Cancel reservation',
+        description: 'Cancel reservation by ID for logged-in user',
+        tags: ['Reservations'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Reservation cancelled',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'success'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/Reservation')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Error during reservation cancellation',
+                content: new OA\JsonContent(ref: '#/components/schemas/Error')
+            )
+        ],
+        security: [['Bearer' => []]]
+    )]
     public function cancel(int $id): JsonResponse
     {
         try {
