@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -38,6 +38,17 @@ export const ReservationList: React.FC<ReservationListProps> = ({
   loading,
   showUsername = false 
 }) => {
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+  const handleCancel = async (id: number) => {
+    try {
+      setCancellingId(id);
+      await onCancel(id);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -93,9 +104,10 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                     <Button
                       variant="outlined"
                       color="error"
-                      onClick={() => onCancel(reservation.id)}
+                      onClick={() => handleCancel(reservation.id)}
+                      disabled={cancellingId === reservation.id}
                     >
-                      Cancel
+                      {cancellingId === reservation.id ? 'Cancelling...' : 'Cancel'}
                     </Button>
                   )}
                 </TableCell>

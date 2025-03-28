@@ -4,7 +4,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { api } from '../services/api';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 export const ReservationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     const [startDate, setStartDate] = useState<Date | null>(null);
@@ -36,6 +36,13 @@ export const ReservationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess
         }
     };
 
+    const handleStartDateChange = (newValue: Date | null) => {
+        setStartDate(newValue);
+        if (endDate && newValue && endDate <= newValue) {
+            setEndDate(null);
+        }
+    };
+
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 400, margin: 'auto', mt: 4 }}>
@@ -43,7 +50,7 @@ export const ReservationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess
                     <DatePicker
                         label="Start Date"
                         value={startDate}
-                        onChange={(newValue) => setStartDate(newValue)}
+                        onChange={handleStartDateChange}
                         disablePast
                     />
                     <DatePicker
@@ -51,7 +58,7 @@ export const ReservationForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess
                         value={endDate}
                         onChange={(newValue) => setEndDate(newValue)}
                         disablePast
-                        minDate={startDate || undefined}
+                        minDate={startDate ? addDays(startDate, 1) : undefined}
                     />
                     {error && <Alert severity="error">{error}</Alert>}
                     <Button

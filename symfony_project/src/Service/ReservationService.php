@@ -122,7 +122,7 @@ class ReservationService
     private function isAvailable(\DateTimeImmutable $startDate, \DateTimeImmutable $endDate): bool
     {
         $currentDate = clone $startDate;
-        while ($currentDate <= $endDate) {
+        while ($currentDate < $endDate) {
             $availability = $this->getOrCreateDailyAvailability($currentDate);
             if ($availability->getAvailableSpots() <= 0) {
                 return false;
@@ -138,7 +138,7 @@ class ReservationService
         $totalPrice = 0.0;
         $currentDate = clone $startDate;
 
-        while ($currentDate <= $endDate) {
+        while ($currentDate < $endDate) {
             $specialPriceKey = Settings::SPECIAL_DATE_PRICE_PREFIX . $currentDate->format('Y-m-d');
             $specialPrice = $this->settingsRepository->findByKey($specialPriceKey);
             
@@ -161,7 +161,7 @@ class ReservationService
     private function updateAvailability(\DateTimeImmutable $startDate, \DateTimeImmutable $endDate, int $change): void
     {
         $currentDate = clone $startDate;
-        while ($currentDate <= $endDate) {
+        while ($currentDate < $endDate) {
             $availability = $this->getOrCreateDailyAvailability($currentDate);
             $availability->setAvailableSpots($availability->getAvailableSpots() + $change);
             $this->entityManager->persist($availability);
@@ -172,7 +172,7 @@ class ReservationService
     private function getOrCreateDailyAvailability(\DateTimeImmutable $date): DailyAvailability
     {
         $dateFormatted = $date->format('Y-m-d');
-        $date = new \DateTimeImmutable($dateFormatted); // Normalizacja daty do północy
+        $date = new \DateTimeImmutable($dateFormatted); // Normalize date to midnight
 
         $availability = $this->dailyAvailabilityRepository->findOneBy(['date' => $date]);
         if (!$availability) {
@@ -197,14 +197,13 @@ class ReservationService
             
             $this->entityManager->persist($availability);
             
-            // Flush i ponowne pobranie, aby uniknąć duplikatów
             try {
                 $this->entityManager->flush();
             } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
-                // Jeśli ktoś inny już utworzył rekord, pobierz go
+                // If someone else already created the record, fetch it
                 $availability = $this->dailyAvailabilityRepository->findOneBy(['date' => $date]);
                 if (!$availability) {
-                    throw $e; // Jeśli nadal nie ma rekordu, coś poszło nie tak
+                    throw $e; // If no record is found, something went wrong
                 }
             }
         }

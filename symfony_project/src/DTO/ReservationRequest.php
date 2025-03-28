@@ -14,10 +14,10 @@ class ReservationRequest
     #[Assert\Type(\DateTimeImmutable::class)]
     private \DateTimeImmutable $endDate;
 
-    #[Assert\IsTrue(message: 'End date must be after or equal to start date')]
+    #[Assert\IsTrue(message: 'End date must be after start date')]
     public function isValidDateRange(): bool
     {
-        return $this->endDate >= $this->startDate;
+        return $this->endDate > $this->startDate;
     }
 
     public function __construct(\DateTimeInterface $startDate, \DateTimeInterface $endDate)

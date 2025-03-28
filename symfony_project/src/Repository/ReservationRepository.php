@@ -16,7 +16,7 @@ class ReservationRepository extends ServiceEntityRepository
     public function findActiveReservationsInDateRange(\DateTimeInterface $startDate, \DateTimeInterface $endDate)
     {
         return $this->createQueryBuilder('r')
-            ->where('r.startDate <= :endDate')
+            ->where('r.startDate < :endDate')
             ->andWhere('r.endDate >= :startDate')
             ->andWhere('r.status = :status')
             ->setParameter('startDate', $startDate)

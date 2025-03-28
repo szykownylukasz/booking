@@ -82,7 +82,7 @@ class ReservationServiceTest extends TestCase
         // Assert
         $this->assertEquals($startDate->format('Y-m-d'), $reservation->getStartDate());
         $this->assertEquals($endDate->format('Y-m-d'), $reservation->getEndDate());
-        $this->assertEquals(300.0, $reservation->getTotalPrice()); // 3 dni * 100
+        $this->assertEquals(200.0, $reservation->getTotalPrice());
         $this->assertEquals('active', $reservation->getStatus());
         $this->assertEquals($this->testUser, $reservation->getUser());
     }

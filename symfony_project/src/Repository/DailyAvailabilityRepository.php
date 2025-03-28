@@ -17,7 +17,7 @@ class DailyAvailabilityRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('d')
             ->where('d.date >= :startDate')
-            ->andWhere('d.date <= :endDate')
+            ->andWhere('d.date < :endDate')
             ->setParameter('startDate', $startDate)
             ->setParameter('endDate', $endDate)
             ->getQuery()

@@ -116,8 +116,8 @@ class ReservationController extends AbstractController
             $startDate = new \DateTimeImmutable($data['startDate']);
             $endDate = new \DateTimeImmutable($data['endDate']);
 
-            if ($endDate < $startDate) {
-                throw new \InvalidArgumentException('End date must be after or equal to start date');
+            if ($endDate <= $startDate) {
+                throw new \InvalidArgumentException('End date must be after start date');
             }
 
             $reservationRequest = new ReservationRequest($startDate, $endDate);
@@ -250,38 +250,34 @@ class ReservationController extends AbstractController
     )]
     public function update(int $id, Request $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        $status = $data['status'] ?? null;
+        try {
+            $data = json_decode($request->getContent(), true);
+            $status = $data['status'] ?? null;
 
-        if ($status !== 'cancelled') {
+            if ($status !== 'cancelled') {
+                return $this->json([
+                    'status' => 'error',
+                    'message' => 'Invalid status'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $reservation = $this->reservationService->cancelReservation($id, $this->getUser());
+
+            return $this->json([
+                'status' => 'success',
+                'data' => $reservation
+            ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
+        } catch (\RuntimeException $e) {
+            $statusCode = match (true) {
+                str_contains($e->getMessage(), 'not found') => Response::HTTP_NOT_FOUND,
+                str_contains($e->getMessage(), 'not active') || str_contains($e->getMessage(), 'not authorized') => Response::HTTP_BAD_REQUEST,
+                default => Response::HTTP_INTERNAL_SERVER_ERROR,
+            };
+
             return $this->json([
                 'status' => 'error',
-                'message' => 'Invalid status'
-            ], Response::HTTP_BAD_REQUEST);
+                'message' => $e->getMessage()
+            ], $statusCode);
         }
-
-        $reservation = $this->reservationService->getReservation($id, $this->getUser());
-
-        if (!$reservation) {
-            return $this->json([
-                'status' => 'error',
-                'message' => 'Reservation not found'
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        if ($reservation->getStatus() === $status) {
-            return $this->json([
-                'status' => 'error',
-                'message' => 'Reservation is already ' . $status
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        $reservation->setStatus($status);
-        $this->reservationService->updateReservation($reservation);
-
-        return $this->json([
-            'status' => 'success',
-            'data' => $reservation
-        ], Response::HTTP_OK, [], ['groups' => ['reservation:read']]);
     }
 }
