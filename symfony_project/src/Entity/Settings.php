@@ -11,8 +11,6 @@ class Settings
 {
     public const DEFAULT_TOTAL_SPOTS = 'default_total_spots';
     public const DAILY_PRICE = 'daily_price';
-    public const SPECIAL_DATE_PRICE_PREFIX = 'price_for_date_';
-    public const SPECIAL_TOTAL_SPOTS_PREFIX = 'total_spots_for_date_';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -78,13 +76,4 @@ class Settings
         $this->updatedAt = new \DateTime();
     }
 
-    public static function getSpecialPriceKey(\DateTimeInterface $date): string
-    {
-        return self::SPECIAL_DATE_PRICE_PREFIX . $date->format('Y-m-d');
-    }
-
-    public static function getSpecialTotalSpotsKey(\DateTimeInterface $date): string
-    {
-        return self::SPECIAL_TOTAL_SPOTS_PREFIX . $date->format('Y-m-d');
-    }
 }

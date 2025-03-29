@@ -75,8 +75,8 @@ services:
              php bin/console assets:install --no-interaction && 
              php bin/console doctrine:migrations:migrate --no-interaction && 
              APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction && 
+             php bin/console doctrine:fixtures:load --no-interaction && 
              php bin/console app:create-users && 
-             APP_ENV=test php bin/console app:create-users && 
              php-fpm"
 
 networks:

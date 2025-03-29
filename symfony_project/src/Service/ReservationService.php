@@ -138,20 +138,13 @@ class ReservationService
         $totalPrice = 0.0;
         $currentDate = clone $startDate;
 
-        while ($currentDate < $endDate) {
-            $specialPriceKey = Settings::SPECIAL_DATE_PRICE_PREFIX . $currentDate->format('Y-m-d');
-            $specialPrice = $this->settingsRepository->findByKey($specialPriceKey);
-            
-            if ($specialPrice) {
-                $totalPrice += (float)$specialPrice->getValue();
-            } else {
-                $defaultPrice = $this->settingsRepository->findByKey(Settings::DAILY_PRICE);
-                if (!$defaultPrice) {
-                    throw new \RuntimeException('Default price not set');
-                }
-                $totalPrice += (float)$defaultPrice->getValue();
-            }
+        $defaultPrice = $this->settingsRepository->findByKey(Settings::DAILY_PRICE);
+        if (!$defaultPrice) {
+            throw new \RuntimeException('Default price not set');
+        }
 
+        while ($currentDate < $endDate) {
+            $totalPrice += (float)$defaultPrice->getValue();
             $currentDate = $currentDate->modify('+1 day');
         }
 
@@ -176,19 +169,12 @@ class ReservationService
 
         $availability = $this->dailyAvailabilityRepository->findOneBy(['date' => $date]);
         if (!$availability) {
-            // Check for special total spots setting for this date
-            $specialTotalSpotsKey = Settings::SPECIAL_TOTAL_SPOTS_PREFIX . $dateFormatted;
-            $specialTotalSpots = $this->settingsRepository->findByKey($specialTotalSpotsKey);
-            
-            if ($specialTotalSpots) {
-                $totalSpots = (int)$specialTotalSpots->getValue();
-            } else {
-                $defaultTotalSpots = $this->settingsRepository->findByKey(Settings::DEFAULT_TOTAL_SPOTS);
-                if (!$defaultTotalSpots) {
-                    throw new \RuntimeException('Default total spots not set');
-                }
-                $totalSpots = (int)$defaultTotalSpots->getValue();
+
+            $defaultTotalSpots = $this->settingsRepository->findByKey(Settings::DEFAULT_TOTAL_SPOTS);
+            if (!$defaultTotalSpots) {
+                throw new \RuntimeException('Default total spots not set');
             }
+            $totalSpots = (int)$defaultTotalSpots->getValue();
 
             $availability = new DailyAvailability();
             $availability->setDate($date)
