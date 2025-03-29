@@ -155,14 +155,15 @@ class ReservationControllerTest extends WebTestCase
 
         // Act
         $this->client->request(
-            'POST',
-            '/api/reservations/' . $reservation->getId() . '/cancel',
+            'PATCH',
+            '/api/reservations/' . $reservation->getId(),
             [],
             [],
             [
                 'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
                 'CONTENT_TYPE' => 'application/json'
-            ]
+            ],
+            json_encode(['status' => 'cancelled'])
         );
 
         $response = $this->client->getResponse();
@@ -178,20 +179,21 @@ class ReservationControllerTest extends WebTestCase
     {
         // Act
         $this->client->request(
-            'POST',
-            '/api/reservations/99999/cancel',
+            'PATCH',
+            '/api/reservations/99999',
             [],
             [],
             [
                 'HTTP_AUTHORIZATION' => 'Bearer ' . $this->token,
                 'CONTENT_TYPE' => 'application/json'
-            ]
+            ],
+            json_encode(['status' => 'cancelled'])
         );
 
         $response = $this->client->getResponse();
 
         // Assert
-        $this->assertEquals(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $response->getStatusCode());
     }
 
     protected function tearDown(): void

@@ -191,7 +191,7 @@ class ReservationController extends AbstractController
         ]);
     }
 
-    #[Route('/reservations/{id}', name: 'update_reservation', methods: ['PATCH'])]
+    #[Route('/reservations/{id}', name: 'update_reservation', methods: ['POST', 'PATCH'])]
     #[IsGranted('ROLE_USER')]
     #[OA\Patch(
         path: '/api/reservations/{id}',
